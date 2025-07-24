@@ -1,5 +1,5 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
-const className = localStorage.getItem("selectedClass") || "Class_1A";
+const WEB_APP_URL = "YOUR_DEPLOYED_WEB_APP_URL"; // Replace with your deployed URL
+const className = localStorage.getItem("selectedClass");
 
 // Common functions
 function showLoading(show) {
@@ -10,20 +10,19 @@ function showError(message) {
   alert("❌ " + message);
 }
 
-// For mark-attendance.html
-if (document.getElementById('attendanceForm')) {
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById('classNameDisplay').textContent = className;
-    loadStudentsForAttendance();
-  });
+// Initialize pages
+if (document.getElementById('classHeader')) {
+  document.getElementById('classHeader').textContent += `: ${className}`;
 }
 
-// For view-student.html
+// Mark Attendance Page
+if (document.getElementById('attendanceForm')) {
+  document.addEventListener("DOMContentLoaded", loadStudentsForAttendance);
+}
+
+// View Students Page
 if (document.getElementById('studentList')) {
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById('classNameDisplay').textContent = className;
-    loadStudentList();
-  });
+  document.addEventListener("DOMContentLoaded", loadStudentList);
 }
 
 function loadStudentsForAttendance() {
@@ -32,14 +31,14 @@ function loadStudentsForAttendance() {
   form.innerHTML = '';
   
   fetch(`${WEB_APP_URL}?action=getStudents&className=${encodeURIComponent(className)}`)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error('Network error');
+      return res.json();
+    })
     .then(data => {
       showLoading(false);
-      if (!data.success) {
-        showError("Failed to load class list: " + data.message);
-        return;
-      }
-
+      if (!data.success) throw new Error(data.message);
+      
       data.students.forEach(s => {
         const div = document.createElement("div");
         div.className = "student";
@@ -49,7 +48,6 @@ function loadStudentsForAttendance() {
             <option value="Present">Present</option>
             <option value="Absent">Absent</option>
             <option value="Late">Late</option>
-            <option value="Excused">Excused</option>
           </select>
         `;
         form.appendChild(div);
@@ -57,8 +55,7 @@ function loadStudentsForAttendance() {
     })
     .catch(err => {
       showLoading(false);
-      console.error(err);
-      showError("Error loading students");
+      showError(err.message);
     });
 }
 
@@ -68,19 +65,19 @@ function loadStudentList() {
   list.innerHTML = '';
   
   fetch(`${WEB_APP_URL}?action=getStudents&className=${encodeURIComponent(className)}`)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error('Network error');
+      return res.json();
+    })
     .then(data => {
       showLoading(false);
-      if (!data.success) {
-        showError("Failed to load student list: " + data.message);
-        return;
-      }
-
+      if (!data.success) throw new Error(data.message);
+      
       if (data.students.length === 0) {
-        list.innerHTML = '<li class="student-item">No students found in this class</li>';
+        list.innerHTML = '<li class="student-item">No students in this class</li>';
         return;
       }
-
+      
       data.students.forEach(s => {
         const li = document.createElement("li");
         li.className = "student-item";
@@ -90,53 +87,46 @@ function loadStudentList() {
     })
     .catch(err => {
       showLoading(false);
-      console.error(err);
-      showError("Error loading student list");
+      showError(err.message);
     });
 }
 
-function submitAttendance() {
-  const selects = document.querySelectorAll("select");
-  if (selects.length === 0) {
-    showError("No students to mark attendance for");
-    return;
-  }
-
-  const attendance = Array.from(selects).map(select => ({
-    roll: select.dataset.roll,
-    status: select.value
-  }));
-
+async function submitAttendance() {
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
   submitBtn.textContent = "Submitting...";
   
-  fetch(WEB_APP_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      action: 'markAttendance',
-      className: className,
-      data: JSON.stringify(attendance)
-    })
-  })
-  .then(res => res.json())
-  .then(response => {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Submit Attendance";
+  try {
+    const selects = document.querySelectorAll("select");
+    const attendance = Array.from(selects).map(select => ({
+      roll: select.dataset.roll,
+      status: select.value
+    }));
+
+    const params = new URLSearchParams();
+    params.append('action', 'markAttendance');
+    params.append('className', className);
+    params.append('data', JSON.stringify(attendance));
+
+    const response = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params
+    });
+
+    const result = await response.json();
     
-    if (response.success) {
-      alert("✅ " + response.message);
-    } else {
-      showError(response.message);
+    if (!result.success) {
+      throw new Error(result.message);
     }
-  })
-  .catch(err => {
+    
+    alert(`✅ ${result.message}`);
+  } catch (error) {
+    showError(error.message);
+  } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = "Submit Attendance";
-    console.error(err);
-    showError("Error submitting attendance");
-  });
+  }
 }
