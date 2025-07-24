@@ -34,18 +34,32 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function submitAttendance() {
-  const selects = document.querySelectorAll('select');
-  const attendanceData = Array.from(selects).map(s => ({
-    roll: s.name,
-    status: s.value
-  }));
+  const selectedClass = localStorage.getItem("selectedClass") || "Class_1A";
+  const checkboxes = document.querySelectorAll("input[type='checkbox']");
+  const attendance = [];
 
-  fetch(`${WEB_APP_URL}?action=markAttendance&className=${className}&data=${encodeURIComponent(JSON.stringify(attendanceData))}`)
-    .then(res => res.json())
-    .then(data => {
-      alert(data.message);
-      window.location.href = 'index.html';
+  checkboxes.forEach(cb => {
+    const roll = cb.dataset.roll;
+    const name = cb.dataset.name;
+    const present = cb.checked ? "Present" : "Absent";
+    attendance.push({ roll, name, present });
+  });
+
+  fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "submitAttendance",
+      className: selectedClass,
+      attendance: attendance
+    }),
+  })
+    .then(res => res.text())
+    .then(response => {
+      alert("Attendance submitted successfully.");
+    })
+    .catch(error => {
+      alert("Error submitting attendance.");
+      console.error(error);
     });
-const className = localStorage.getItem('selectedClass');
+}
 
-  }
