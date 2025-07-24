@@ -43,6 +43,49 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+// Attendance page logic
+document.addEventListener('DOMContentLoaded', () => {
+  const studentList = document.getElementById('studentList');
+  const attendanceForm = document.getElementById('attendanceForm');
+  const attendanceDate = document.getElementById('attendanceDate');
+
+  if (studentList && attendanceForm && attendanceDate) {
+    const today = new Date().toISOString().split('T')[0];
+    attendanceDate.value = today;
+
+    const students = JSON.parse(localStorage.getItem('students') || '[]');
+    if (students.length === 0) {
+      studentList.innerHTML = "<p>No students found. Please add students first.</p>";
+      attendanceForm.style.display = "none";
+      return;
+    }
+
+    students.forEach((student, index) => {
+      const div = document.createElement('div');
+      div.className = "student-checkbox";
+      div.innerHTML = `
+        <label>
+          <input type="checkbox" name="attendance" value="${student.roll}">
+          ${student.name} (Roll: ${student.roll}, Class: ${student.class})
+        </label>
+      `;
+      studentList.appendChild(div);
+    });
+
+    attendanceForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const date = attendanceDate.value;
+      const checkboxes = document.querySelectorAll('input[name="attendance"]:checked');
+      const presentRolls = Array.from(checkboxes).map(cb => cb.value);
+
+      const allAttendance = JSON.parse(localStorage.getItem('attendance') || '{}');
+      allAttendance[date] = presentRolls;
+
+      localStorage.setItem('attendance', JSON.stringify(allAttendance));
+      alert('✅ Attendance saved!');
+    });
+  }
+});
 
 // Delete student
 function deleteStudent(index) {
