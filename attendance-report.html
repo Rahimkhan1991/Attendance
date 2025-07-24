@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    .filter-group {
+      margin-bottom: 20px;
+    }
+
+    .summary {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .back-btn {
+      background: #555;
+      color: white;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
+  <h2>Attendance Report</h2>
+
+  <div class="filter-group">
+    <label for="dateFilter">Filter by Date:</label>
+    <input type="date" id="dateFilter" onchange="loadAttendanceByDate()">
+  </div>
+
+  <div class="filter-group">
+    <label for="monthFilter">Filter by Month:</label>
+    <input type="month" id="monthFilter" onchange="loadAttendanceByMonth()">
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <table id="reportTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Student</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const ATTENDANCE_KEY = 'attendance_records';
+
+    function loadAttendanceByDate() {
+      const selectedDate = document.getElementById('dateFilter').value;
+      if (!selectedDate) return;
+      const data = JSON.parse(localStorage.getItem(ATTENDANCE_KEY)) || [];
+      const filtered = data.filter(record => record.date === selectedDate);
+      renderTable(filtered);
+    }
+
+    function loadAttendanceByMonth() {
+      const selectedMonth = document.getElementById('monthFilter').value;
+      if (!selectedMonth) return;
+      const data = JSON.parse(localStorage.getItem(ATTENDANCE_KEY)) || [];
+      const filtered = data.filter(record => record.date.startsWith(selectedMonth));
+      renderTable(filtered);
+    }
+
+    function renderTable(data) {
+      const tbody = document.querySelector('#reportTable tbody');
+      tbody.innerHTML = '';
+
+      let present = 0, absent = 0;
+
+      data.forEach(entry => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${entry.date}</td>
+          <td>${entry.name}</td>
+          <td>${entry.status}</td>
+        `;
+        tbody.appendChild(row);
+
+        if (entry.status === 'Present') present++;
+        if (entry.status === 'Absent') absent++;
+      });
+
+      const summary = document.getElementById('summary');
+      const total = present + absent;
+      const percent = total > 0 ? ((present / total) * 100).toFixed(2) : 0;
+
+      summary.innerText = `✅ Present: ${present}, ❌ Absent: ${absent}, 📊 Percentage: ${percent}%`;
+    }
+  </script>
+
+</body>
+</html>
