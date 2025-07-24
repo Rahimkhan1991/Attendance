@@ -1,32 +1,120 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mark Attendance</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .student-row {
+      display: flex;
+      justify-content: space-between;
+      background: #fff;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .student-row label {
+      flex: 1;
+    }
+
+    .student-row select {
+      flex: 1;
+    }
+
+    button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+
+    #status {
+      text-align: center;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
 </head>
 <body>
   <h2>Mark Attendance - Class 1A</h2>
-  <form id="attendance-form" class="container"></form>
-  <button onclick="submitAttendance()">Submit</button>
+  <div id="student-list"></div>
+  <button onclick="submitAttendance()">Submit Attendance</button>
+  <div id="status"></div>
 
-  <script src="script.js"></script>
   <script>
-    fetchStudents("Class1A", function(data) {
-      const form = document.getElementById("attendance-form");
-      data.forEach(s => {
-        const row = document.createElement("div");
-        row.innerHTML = `
-          <label>
-            <input type="checkbox" name="attendance" value="${s.roll}" checked>
-            ${s.roll}. ${s.name}
-          </label><br>`;
-        form.appendChild(row);
-      });
-    });
+    const CLASS_NAME = "Class1A";
+    const API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
+    const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+
+    let attendanceData = [];
+
+    function loadStudents() {
+      fetch(`${API_URL}?class=${CLASS_NAME}`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("student-list");
+          data.forEach(student => {
+            attendanceData.push({ roll: student.roll, name: student.name, status: "Present" });
+            const row = document.createElement("div");
+            row.className = "student-row";
+            row.innerHTML = `
+              <label>${student.roll}. ${student.name}</label>
+              <select onchange="updateStatus(${student.roll}, this.value)">
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+              </select>
+            `;
+            container.appendChild(row);
+          });
+        });
+    }
+
+    function updateStatus(roll, status) {
+      const student = attendanceData.find(s => s.roll === roll);
+      if (student) student.status = status;
+    }
 
     function submitAttendance() {
-      alert("✔️ Attendance submitted (dummy – add script integration)");
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "markAttendance",
+          class: CLASS_NAME,
+          date: today,
+          attendance: attendanceData
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then(res => res.text())
+      .then(msg => {
+        document.getElementById("status").textContent = "Attendance saved successfully!";
+      })
+      .catch(err => {
+        document.getElementById("status").textContent = "Failed to save attendance.";
+        console.error(err);
+      });
     }
+
+    loadStudents();
   </script>
 </body>
 </html>
