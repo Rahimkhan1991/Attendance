@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec"; // Replace with your deployed URL
+const WEB_APP_URL = "YOUR_DEPLOYED_WEB_APP_URL"; // Replace with your deployed URL
 const className = localStorage.getItem("selectedClass");
 
 // Common functions
@@ -91,28 +91,42 @@ function loadStudentList() {
     });
 }
 
-async function safeFetch(url, options = {}) {
-  // Add JSONP callback parameter
-  if (!url.includes('callback=')) {
-    url += (url.includes('?') ? '&' : '?') + 'callback=callback';
-  }
+async function submitAttendance() {
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
   
-  return new Promise((resolve, reject) => {
-    // Create script tag for JSONP
-    const script = document.createElement('script');
-    window.callback = (data) => {
-      document.body.removeChild(script);
-      delete window.callback;
-      resolve(data);
-    };
+  try {
+    const selects = document.querySelectorAll("select");
+    const attendance = Array.from(selects).map(select => ({
+      roll: select.dataset.roll,
+      status: select.value
+    }));
+
+    const params = new URLSearchParams();
+    params.append('action', 'markAttendance');
+    params.append('className', className);
+    params.append('data', JSON.stringify(attendance));
+
+    const response = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params
+    });
+
+    const result = await response.json();
     
-    script.src = url;
-    script.onerror = () => {
-      document.body.removeChild(script);
-      delete window.callback;
-      reject(new Error('JSONP request failed'));
-    };
+    if (!result.success) {
+      throw new Error(result.message);
+    }
     
-    document.body.appendChild(script);
-  });
+    alert(`✅ ${result.message}`);
+  } catch (error) {
+    showError(error.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit Attendance";
+  }
 }
