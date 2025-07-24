@@ -35,17 +35,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function submitAttendance() {
   const selectedClass = localStorage.getItem("selectedClass") || "Class_1A";
-  const checkboxes = document.querySelectorAll("input[type='checkbox']");
   const attendance = [];
 
-  checkboxes.forEach(cb => {
-    const roll = cb.dataset.roll;
-    const name = cb.dataset.name;
-    const present = cb.checked ? "Present" : "Absent";
-    attendance.push({ roll, name, present });
+  const form = document.getElementById("attendanceForm");
+  const selects = form.querySelectorAll("select");
+
+  selects.forEach(select => {
+    const roll = select.name;
+    const selectedOption = select.value;
+    const label = select.previousElementSibling;
+    const name = label.textContent.split(" - ")[1]; // Extract name from label
+
+    attendance.push({
+      roll: roll,
+      name: name,
+      present: selectedOption
+    });
   });
 
-  fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
+  fetch(WEB_APP_URL, {
     method: "POST",
     body: JSON.stringify({
       action: "submitAttendance",
@@ -62,4 +70,3 @@ function submitAttendance() {
       console.error(error);
     });
 }
-
