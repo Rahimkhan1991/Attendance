@@ -1,48 +1,41 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec"; // Replace with your deployed URL
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+const className = localStorage.getItem("selectedClass");
 
 document.addEventListener('DOMContentLoaded', () => {
-  const className = localStorage.getItem('selectedClass');
   if (!className) {
-    alert("No class selected.");
+    alert("No class selected");
     return;
   }
 
-  // Load Students for Attendance
+  document.getElementById("classLabel").innerText = "Class: " + className;
+
   fetch(`${WEB_APP_URL}?action=getStudents&className=${className}`)
     .then(res => res.json())
     .then(data => {
-      if (data.success && data.students) {
-        const form = document.getElementById('attendanceForm');
-        data.students.forEach(s => {
-          const div = document.createElement('div');
-          div.innerHTML = `
-            <label>${s.roll} - ${s.name}</label>
-            <select data-roll="${s.roll}" data-name="${s.name}">
-              <option value="Present">Present</option>
-              <option value="Absent">Absent</option>
-            </select>
-            <br/>
-          `;
-          form.appendChild(div);
-        });
-      } else {
-        alert("Failed to load students.\n" + data.message);
-      }
+      if (!data.success) throw new Error("Failed to load class list");
+
+      const form = document.getElementById("attendanceForm");
+      data.students.forEach(student => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <label>${student.roll} - ${student.name}</label>
+          <select data-roll="${student.roll}" data-name="${student.name}">
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+          </select>
+          <br>
+        `;
+        form.appendChild(div);
+      });
     })
     .catch(err => {
       console.error(err);
-      alert("Error fetching students.");
+      alert("❌ Failed to load class list");
     });
 });
 
 function submitAttendance() {
-  const className = localStorage.getItem("selectedClass");
-  if (!className) {
-    alert("Class not selected.");
-    return;
-  }
-
-  const selects = document.querySelectorAll("select");
+  const selects = document.querySelectorAll("#attendanceForm select");
   const attendance = [];
 
   selects.forEach(select => {
@@ -52,19 +45,17 @@ function submitAttendance() {
     attendance.push({ roll, name, status });
   });
 
-  const url = `${WEB_APP_URL}?action=markAttendance&className=${className}&data=${encodeURIComponent(JSON.stringify(attendance))}`;
-
-  fetch(url)
+  fetch(`${WEB_APP_URL}?action=markAttendance&className=${className}&data=${encodeURIComponent(JSON.stringify(attendance))}`)
     .then(res => res.json())
     .then(response => {
       if (response.success) {
-        alert("✅ " + response.message);
+        alert("✅ Attendance submitted: " + response.message);
       } else {
-        alert("❌ Failed: " + response.message);
+        alert("❌ " + response.message);
       }
     })
     .catch(err => {
       console.error(err);
-      alert("❌ Error submitting attendance");
+      alert("❌ Error submitting attendance.");
     });
 }
