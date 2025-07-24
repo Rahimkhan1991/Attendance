@@ -9,3 +9,27 @@ function fetchStudents(className, callback) {
       alert("Failed to fetch students.");
     });
 }
+const WEB_APP_URL = 'PASTE_YOUR_WEB_APP_URL_HERE';
+
+function fetchStudents(className, callback) {
+  fetch(WEB_APP_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: "getStudents",
+      class: className
+    }),
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success && data.students) {
+      callback(data.students);
+    } else {
+      alert("Error: " + data.message);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Failed to fetch students.");
+  });
+}

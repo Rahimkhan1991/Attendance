@@ -22,3 +22,20 @@ h2 {
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f0f4f8;
+}
+
+h2 {
+  color: #007bff;
+}
+
+.student-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 10px 15px;
+  margin-bottom: 10px;
+}
