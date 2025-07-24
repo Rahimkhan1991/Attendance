@@ -1,71 +1,24 @@
 body {
   font-family: Arial, sans-serif;
+  background: #f2f4f8;
   padding: 20px;
-  background: #f0f4f8;
+  margin: 0;
+}
+
+h2 {
   text-align: center;
+  color: #007bff;
 }
-h1 {
-  color: #2c3e50;
+
+.container {
+  max-width: 800px;
+  margin: auto;
 }
-.menu a {
-  display: block;
-  margin: 10px auto;
-  padding: 12px;
-  width: 200px;
-  background: #3498db;
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-}
-.menu a:hover {
-  background: #2980b9;
-}
-footer {
-  margin-top: 40px;
-  font-size: 14px;
-  color: #888;
-  .student-card {
+
+.student-card {
   background: white;
-  border: 1px solid #ddd;
   padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  text-align: left;
-}
-.student-card button {
-  margin-top: 8px;
-  background: #e74c3c;
-  color: white;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.student-checkbox {
-  margin: 8px 0;
-}
-input[type="checkbox"] {
-  margin-right: 10px;
-}
-
-.student-card button:hover {
-  background: #c0392b;
-}
-
-}
-.attendance-day {
-  background: #ffffff;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.attendance-day h4 {
-  margin-bottom: 10px;
-  color: #333;
-}
-.attendance-day ul {
-  padding-left: 20px;
+  margin: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
