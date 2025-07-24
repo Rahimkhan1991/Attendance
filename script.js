@@ -46,4 +46,6 @@ function submitAttendance() {
       alert(data.message);
       window.location.href = 'index.html';
     });
-}
+const className = localStorage.getItem('selectedClass');
+
+  }
