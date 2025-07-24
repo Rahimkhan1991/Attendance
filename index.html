@@ -1,50 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>School Attendance</title>
+  <meta charset="UTF-8">
+  <title>Attendance - Select Class</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h2>Select a Class</h2>
-  <select id="classSelector">
-    <option disabled selected>Loading classes...</option>
+
+  <select id="classDropdown">
+    <option value="">-- Select Class --</option>
+    <option value="Class_1A">Class 1A</option>
+    <option value="Class_1B">Class 1B</option>
+    <option value="Class_2A">Class 2A</option>
+    <!-- Add more classes as needed -->
   </select>
+
   <br><br>
-  <button onclick="viewStudents()">View Students</button>
-  <button onclick="markAttendance()">Mark Attendance</button>
+  <button onclick="goToMarkAttendance()">Mark Attendance</button>
+  <button onclick="goToViewStudents()">View Students</button>
 
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
-
-    // Load classes from sheet
-    fetch(`${WEB_APP_URL}?action=getClassList`)
-      .then(res => res.json())
-      .then(data => {
-        const select = document.getElementById('classSelector');
-        select.innerHTML = ''; // clear loading text
-
-        if (data.success) {
-          data.classes.forEach(cls => {
-            const opt = document.createElement('option');
-            opt.value = cls;
-            opt.textContent = cls.replace('_', ' ');
-            select.appendChild(opt);
-          });
-        } else {
-          alert("Failed to load class list");
-        }
-      });
-
-    function viewStudents() {
-      const className = document.getElementById('classSelector').value;
-      localStorage.setItem('selectedClass', className);
-      window.location.href = 'view-students.html';
+    function goToMarkAttendance() {
+      const selectedClass = document.getElementById("classDropdown").value;
+      if (!selectedClass) {
+        alert("Please select a class first.");
+        return;
+      }
+      localStorage.setItem("selectedClass", selectedClass);
+      window.location.href = "mark-attendance.html";
     }
 
-    function markAttendance() {
-      const className = document.getElementById('classSelector').value;
-      localStorage.setItem('selectedClass', className);
-      window.location.href = 'mark-attendance.html';
+    function goToViewStudents() {
+      const selectedClass = document.getElementById("classDropdown").value;
+      if (!selectedClass) {
+        alert("Please select a class first.");
+        return;
+      }
+      localStorage.setItem("selectedClass", selectedClass);
+      window.location.href = "view-student.html";
     }
   </script>
 </body>
