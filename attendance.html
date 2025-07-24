@@ -66,7 +66,25 @@
     let attendanceData = [];
 
     function loadStudents() {
-      fetch('YOUR_WEB_APP_URL', {
+      fetch(`${API_URL}?class=${CLASS_NAME}`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("student-list");
+          data.forEach(student => {
+            attendanceData.push({ roll: student.roll, name: student.name, status: "Present" });
+            const row = document.createElement("div");
+            row.className = "student-row";
+            row.innerHTML = `
+              <label>${student.roll}. ${student.name}</label>
+              <select onchange="updateStatus(${student.roll}, this.value)">
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+              </select>
+            `;
+            container.appendChild(row);
+          });
+        });
+        fetch('YOUR_WEB_APP_URL', {
   method: 'POST',
   body: JSON.stringify({
     action: "markAttendance",
