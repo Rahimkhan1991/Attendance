@@ -1,19 +1,18 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec"; // Replace with your deployed Apps Script URL
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec"; // Replace with your web app URL
 const className = localStorage.getItem('selectedClass');
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!className) return;
+  if (!className) {
+    alert("Class not selected.");
+    return;
+  }
 
   fetch(`${WEB_APP_URL}?action=getStudents&className=${className}`)
     .then(res => res.json())
     .then(data => {
-      if (location.pathname.includes('view-students')) {
-        const list = document.getElementById('studentList');
-        data.students.forEach(s => {
-          const li = document.createElement('li');
-          li.textContent = `${s.roll} - ${s.name}`;
-          list.appendChild(li);
-        });
+      if (!data.success) {
+        alert("❌ Failed to load students.");
+        return;
       }
 
       if (location.pathname.includes('mark-attendance')) {
@@ -22,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const div = document.createElement('div');
           div.innerHTML = `
             <label>${s.roll} - ${s.name}</label>
-            <select name="${s.roll}">
+            <select data-roll="${s.roll}" data-name="${s.name}">
               <option value="Present">Present</option>
               <option value="Absent">Absent</option>
             </select><br>
@@ -30,43 +29,46 @@ document.addEventListener('DOMContentLoaded', () => {
           form.appendChild(div);
         });
       }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("❌ Failed to fetch students.");
     });
 });
 
 function submitAttendance() {
-  const selectedClass = localStorage.getItem("selectedClass") || "Class_1A";
+  const selectedClass = localStorage.getItem("selectedClass");
+  const selects = document.querySelectorAll("select");
   const attendance = [];
 
-  const form = document.getElementById("attendanceForm");
-  const selects = form.querySelectorAll("select");
-
   selects.forEach(select => {
-    const roll = select.name;
-    const selectedOption = select.value;
-    const label = select.previousElementSibling;
-    const name = label.textContent.split(" - ")[1]; // Extract name from label
-
-    attendance.push({
-      roll: roll,
-      name: name,
-      present: selectedOption
-    });
+    const roll = select.getAttribute("data-roll");
+    const name = select.getAttribute("data-name");
+    const status = select.value;
+    attendance.push({ roll, name, status });
   });
 
   fetch(WEB_APP_URL, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
-      action: "submitAttendance",
+      action: "markAttendance",
       className: selectedClass,
-      attendance: attendance
-    }),
-  })
-    .then(res => res.text())
-    .then(response => {
-      alert("Attendance submitted successfully.");
+      data: attendance
     })
-    .catch(error => {
-      alert("Error submitting attendance.");
-      console.error(error);
+  })
+    .then(res => res.json())
+    .then(response => {
+      if (response.success) {
+        alert("✅ " + response.message);
+      } else {
+        alert("❌ Failed: " + response.message);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("❌ Error submitting attendance.");
     });
 }
