@@ -1,111 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Attendance - Select Class</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Attendance App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <style>
     body {
-      max-width: 500px;
-      margin: 0 auto;
-      padding: 20px;
       font-family: Arial, sans-serif;
-      background: #f5f7fa;
-    }
-
-    .card {
-      background: white;
       padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      background: #f2f2f2;
     }
-
     h2 {
-      text-align: center;
       color: #333;
     }
-
-    select, button {
-      padding: 12px;
-      margin: 10px 0;
+    .btn {
+      display: block;
       width: 100%;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-
-    button {
-      background: #4285f4;
+      padding: 15px;
+      margin: 10px 0;
+      font-size: 18px;
+      background: #007bff;
       color: white;
       border: none;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #3367d6;
+      border-radius: 8px;
+      text-align: center;
+      text-decoration: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Select a Class</h2>
-
-    <select id="classDropdown">
-      <option value="">-- Loading Classes... --</option>
-    </select>
-
-    <button onclick="goToMarkAttendance()">Mark Attendance</button>
-    <button onclick="goToViewStudents()">View Students</button>
-  </div>
-
-  <script>
-    // Replace with your deployed Apps Script Web App URL
-    const BASE_URL = "https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec";
-
-    async function loadClassList() {
-      const dropdown = document.getElementById("classDropdown");
-      try {
-        // OPTIONAL: If backend supports getClassList
-        const res = await fetch(`${BASE_URL}?action=getClassList`);
-        const json = await res.json();
-
-        dropdown.innerHTML = `<option value="">-- Select Class --</option>`;
-        json.classes.forEach(cls => {
-          const option = document.createElement("option");
-          option.value = cls;
-          option.textContent = cls.replace("Class_", "Class ");
-          dropdown.appendChild(option);
-        });
-      } catch (err) {
-        console.error("Failed to load class list", err);
-        dropdown.innerHTML = `<option value="Class_1A">Class 1A</option>
-                              <option value="Class_2A">Class 2A</option>
-                              <option value="Class_2B">Class 2B</option>`;
-      }
-    }
-
-    function goToMarkAttendance() {
-      const selectedClass = document.getElementById("classDropdown").value;
-      if (!selectedClass) {
-        alert("Please select a class first.");
-        return;
-      }
-      localStorage.setItem("selectedClass", selectedClass);
-      window.location.href = "mark-attendance.html";
-    }
-
-    function goToViewStudents() {
-      const selectedClass = document.getElementById("classDropdown").value;
-      if (!selectedClass) {
-        alert("Please select a class first.");
-        return;
-      }
-      localStorage.setItem("selectedClass", selectedClass);
-      window.location.href = "view-student.html";
-    }
-
-    // Load class list on page load
-    loadClassList();
-  </script>
+  <h2>Attendance Dashboard</h2>
+  <a class="btn" href="view-student.html">📋 View Students</a>
+  <a class="btn" href="mark-attendance.html">✅ Mark Attendance</a>
+  <a class="btn" href="attendance-report.html">📈 Attendance Report</a> <!-- New link added -->
 </body>
 </html>
