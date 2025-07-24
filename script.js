@@ -1,4 +1,4 @@
-const API_BASE = "https://script.google.com/macros/s/AKfycbxLzHJjOqBQwq9OO0j_y6G0llyn1mWagBvWbo07nO8DYNtxKAmso2V8TaLS9ii6MWcF3Q/exec";
+const API_BASE = "https://script.google.com/macros/s/AKfycbwrU396WRIPhEYDtFgCGA3ayag4NE8ibnFl7AxMX1swT-F7twQOgC1crhaJmEZxV7D3eA/exec";
 
 function fetchStudents(className, callback) {
   fetch(`${API_BASE}?class=${className}`)
