@@ -1,144 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Attendance Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       padding: 10px;
-      background: #f0f0f0;
+      background: #f4f6f9;
     }
-
-    .container {
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-
-    h2 {
-      margin-bottom: 15px;
-    }
-
-    select, input {
+    h2 { color: #333; }
+    select, button {
       padding: 8px;
-      margin: 5px 5px 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+      margin-bottom: 10px;
     }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-
-    th, td {
+    .student-report {
+      background: white;
+      margin-bottom: 10px;
       padding: 10px;
-      border: 1px solid #ddd;
-      text-align: center;
+      border-radius: 5px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
-
-    th {
-      background: #007bff;
-      color: white;
-    }
-
-    .back-btn {
-      background: #333;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      margin-bottom: 15px;
-      cursor: pointer;
-    }
+    .present { color: green; }
+    .absent { color: red; }
   </style>
 </head>
 <body>
-  <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
+  <button onclick="window.location.href='index.html'">← Back</button>
+  <h2>Attendance Report</h2>
 
-  <div class="container">
-    <h2>Attendance Report</h2>
+  <label>Select Class:</label>
+  <select id="classDropdown" onchange="fetchReport()"></select>
 
-    <label for="classSelect">Select Class:</label>
-    <select id="classSelect" onchange="loadReport()">
-      <option value="">--Choose--</option>
-    </select>
-
-    <label for="filterDate">Filter by Date:</label>
-    <input type="date" id="filterDate" onchange="loadReport()">
-
-    <label for="filterMonth">or Month:</label>
-    <input type="month" id="filterMonth" onchange="loadReport()">
-
-    <table id="reportTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Roll No</th>
-          <th>Name</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="4">Please select class & date/month</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div id="reportContainer">Loading...</div>
 
   <script>
-    const apiBase = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_URL/exec";
-
     async function fetchClassList() {
-      const res = await fetch(apiBase + "?action=getClassList");
-      const data = await res.json();
-      const classSelect = document.getElementById("classSelect");
-
-      data.classes.forEach(cls => {
-        const opt = document.createElement("option");
-        opt.value = cls;
-        opt.textContent = cls.replace("Class_", "");
-        classSelect.appendChild(opt);
-      });
+      const res = await fetch('https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getClassList');
+      const classes = await res.json();
+      const dropdown = document.getElementById("classDropdown");
+      dropdown.innerHTML = classes.map(c => `<option value="${c}">${c}</option>`).join('');
+      fetchReport(); // load first class
     }
 
-    async function loadReport() {
-      const className = document.getElementById("classSelect").value;
-      const date = document.getElementById("filterDate").value;
-      const month = document.getElementById("filterMonth").value;
+    async function fetchReport() {
+      const className = document.getElementById("classDropdown").value;
+      const res = await fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendanceReport&className=${className}`);
+      const data = await res.json();
+      const container = document.getElementById("reportContainer");
 
-      if (!className || (!date && !month)) {
+      if (data.error) {
+        container.innerHTML = `<p style="color:red;">${data.error}</p>`;
         return;
       }
 
-      const filter = date ? `&date=${date}` : `&month=${month}`;
-      const res = await fetch(apiBase + `?action=getAttendanceReport&className=${className}${filter}`);
-      const result = await res.json();
-
-      const tableBody = document.querySelector("#reportTable tbody");
-      tableBody.innerHTML = "";
-
-      if (result.data && result.data.length) {
-        result.data.forEach(row => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${row.date}</td>
-            <td>${row.roll}</td>
-            <td>${row.name}</td>
-            <td>${row.status}</td>
-          `;
-          tableBody.appendChild(tr);
-        });
-      } else {
-        tableBody.innerHTML = `<tr><td colspan="4">No records found.</td></tr>`;
-      }
+      let html = '';
+      data.report.forEach(stu => {
+        html += `<div class="student-report">
+          <strong>${stu.roll} - ${stu.name}</strong><br/>
+          ${stu.attendance.map(a => `
+            <div>${a.date}: 
+              <span class="${a.status.toLowerCase()}">${a.status}</span>
+            </div>`).join('')}
+        </div>`;
+      });
+      container.innerHTML = html;
     }
 
-    // On load
     fetchClassList();
   </script>
 </body>
