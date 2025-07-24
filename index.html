@@ -2,8 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance - Select Class</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    select, button {
+      padding: 10px;
+      margin: 5px;
+      width: 100%;
+    }
+    button {
+      background: #4285f4;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <h2>Select a Class</h2>
@@ -11,9 +30,8 @@
   <select id="classDropdown">
     <option value="">-- Select Class --</option>
     <option value="Class_1A">Class 1A</option>
+    <option value="Class_1B">Class 1B</option>
     <option value="Class_2A">Class 2A</option>
-    <option value="Class_2B">Class 2B</option>
-    <!-- Add more classes as needed -->
   </select>
 
   <br><br>
