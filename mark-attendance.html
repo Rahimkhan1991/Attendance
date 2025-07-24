@@ -2,47 +2,31 @@
 <html>
 <head>
   <title>Mark Attendance</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   <style>
     .student { 
-      margin-bottom: 10px;
-      padding: 10px;
       background: white;
+      padding: 15px;
+      margin-bottom: 10px;
       border-radius: 5px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    select {
-      margin-left: 10px;
-      padding: 5px 10px;
-      border-radius: 4px;
-      border: 1px solid #ddd;
-    }
     #submitBtn {
-      background: #28a745;
-      padding: 12px 25px;
+      background: #34a853;
+      padding: 12px 20px;
       font-size: 16px;
       margin-top: 20px;
     }
-    #submitBtn:hover {
-      background: #218838;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .back-btn {
-      background: #6c757d;
+    #loading {
+      text-align: center;
+      padding: 20px;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h2>Mark Attendance: <span id="classNameDisplay"></span></h2>
-    <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
-  </div>
+  <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
+  <h2 id="classHeader">Mark Attendance</h2>
   
   <div id="loading">Loading students...</div>
   <form id="attendanceForm"></form>
