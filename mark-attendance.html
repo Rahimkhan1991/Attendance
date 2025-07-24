@@ -2,15 +2,20 @@
 <html>
 <head>
   <title>Mark Attendance</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h2 { color: #007bff; }
+    .student { margin-bottom: 10px; }
+    select { margin-left: 10px; }
+    button { padding: 10px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  </style>
 </head>
 <body>
   <h2>Mark Attendance</h2>
-  <div id="classLabel"></div>
   <form id="attendanceForm"></form>
   <br>
-  <button onclick="submitAttendance()">✅ Submit Attendance</button>
+  <button onclick="submitAttendance()">Submit Attendance</button>
 
   <script src="script.js"></script>
 </body>
