@@ -82,7 +82,7 @@
 
     async function loadStudents() {
       try {
-        const response = await fetch(`https://script.google.com/macros/s/REPLACE_WITH_YOUR_DEPLOYED_URL/exec?action=getStudents&className=${className}`);
+        const response = await fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getStudents&className=${className}`);
         const data = await response.json();
 
         if (!data || !data.students || data.students.length === 0) {
