@@ -100,3 +100,40 @@ function deleteStudent(index) {
     });
   }
 });
+// Generate attendance report
+document.addEventListener('DOMContentLoaded', () => {
+  const reportContainer = document.getElementById('reportContainer');
+  if (reportContainer) {
+    const students = JSON.parse(localStorage.getItem('students') || '[]');
+    const attendanceData = JSON.parse(localStorage.getItem('attendance') || '{}');
+
+    if (Object.keys(attendanceData).length === 0) {
+      reportContainer.innerHTML = "<p>No attendance data found.</p>";
+      return;
+    }
+
+    const dateList = Object.keys(attendanceData).sort().reverse(); // latest first
+
+    dateList.forEach(date => {
+      const presentRolls = attendanceData[date];
+
+      const section = document.createElement('div');
+      section.className = 'attendance-day';
+      section.innerHTML = `<h4>📅 ${date}</h4>`;
+
+      const ul = document.createElement('ul');
+
+      presentRolls.forEach(roll => {
+        const student = students.find(s => s.roll === roll);
+        const li = document.createElement('li');
+        li.textContent = student
+          ? `${student.name} (Roll: ${student.roll}, Class: ${student.class})`
+          : `Unknown student (Roll: ${roll})`;
+        ul.appendChild(li);
+      });
+
+      section.appendChild(ul);
+      reportContainer.appendChild(section);
+    });
+  }
+});
