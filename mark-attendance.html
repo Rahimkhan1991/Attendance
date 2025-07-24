@@ -1,42 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Mark Attendance</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .student { margin-bottom: 10px; }
+  </style>
 </head>
 <body>
-  <h2>Mark Attendance for Class1A</h2>
-  <button onclick="markSampleAttendance()">Submit Attendance</button>
+  <h2>Mark Attendance</h2>
+
+  <label>Select Class:
+    <select id="classSelect">
+      <option value="Class1A">Class1A</option>
+      <option value="Class2B">Class2B</option>
+      <!-- Add more class options -->
+    </select>
+  </label>
+
+  <br><br>
+
+  <label>Select Date:
+    <input type="date" id="attendanceDate">
+  </label>
+
+  <br><br>
+
+  <div id="studentList"></div>
+
+  <button onclick="submitAttendance()">Submit Attendance</button>
 
   <script>
-    async function markSampleAttendance() {
-      const url = "https://script.google.com/macros/s/AKfycbxLzHJjOqBQwq9OO0j_y6G0llyn1mWagBvWbo07nO8DYNtxKAmso2V8TaLS9ii6MWcF3Q/exec"; // Replace with your Apps Script Web App URL
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwrU396WRIPhEYDtFgCGA3ayag4NE8ibnFl7AxMX1swT-F7twQOgC1crhaJmEZxV7D3eA/exec';
 
-      const payload = {
-        action: "markAttendance",
-        class: "Class1A",
-        date: "2025-07-24", // Change date as needed
-        attendance: [
-          { roll: 1, status: "P" },
-          { roll: 2, status: "A" },
-          { roll: 3, status: "P" }
-        ]
-      };
+    document.getElementById('classSelect').addEventListener('change', fetchStudents);
 
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const text = await res.text();
-        alert("Response: " + text);
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
+    function fetchStudents() {
+      const className = document.getElementById('classSelect').value;
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: "getStudents",
+          class: className
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById('studentList');
+        container.innerHTML = "";
+        if (data.success) {
+          data.students.forEach(student => {
+            const div = document.createElement('div');
+            div.className = 'student';
+            div.innerHTML = `
+              ${student.roll}. ${student.name}
+              <label><input type="radio" name="status_${student.roll}" value="Present" checked> Present</label>
+              <label><input type="radio" name="status_${student.roll}" value="Absent"> Absent</label>
+            `;
+            container.appendChild(div);
+          });
+        } else {
+          alert("Error: " + data.message);
+        }
+      });
     }
+
+    function submitAttendance() {
+      const className = document.getElementById('classSelect').value;
+      const date = document.getElementById('attendanceDate').value;
+      if (!date) return alert("Please select a date");
+
+      const attendance = [];
+      const radios = document.querySelectorAll('input[type=radio]:checked');
+      radios.forEach(radio => {
+        const roll = radio.name.split("_")[1];
+        attendance.push({ roll: parseInt(roll), status: radio.value });
+      });
+
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: "markAttendance",
+          class: className,
+          date: date,
+          attendance: attendance
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert("Attendance saved successfully!");
+        } else {
+          alert("Error: " + data.message);
+        }
+      });
+    }
+
+    // Initial load
+    fetchStudents();
   </script>
 </body>
 </html>
