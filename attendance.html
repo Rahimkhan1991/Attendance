@@ -1,24 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mark Attendance</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>📅 Mark Attendance</h2>
-
-  <label for="attendanceDate"><strong>Select Date:</strong></label><br>
-  <input type="date" id="attendanceDate"><br><br>
-
-  <form id="attendanceForm">
-    <div id="studentList"></div>
-    <button type="submit">✅ Save Attendance</button>
-  </form>
-
-  <a href="index.html">⬅ Back to Home</a>
+  <h2>Mark Attendance - Class 1A</h2>
+  <form id="attendance-form" class="container"></form>
+  <button onclick="submitAttendance()">Submit</button>
 
   <script src="script.js"></script>
+  <script>
+    fetchStudents("Class1A", function(data) {
+      const form = document.getElementById("attendance-form");
+      data.forEach(s => {
+        const row = document.createElement("div");
+        row.innerHTML = `
+          <label>
+            <input type="checkbox" name="attendance" value="${s.roll}" checked>
+            ${s.roll}. ${s.name}
+          </label><br>`;
+        form.appendChild(row);
+      });
+    });
+
+    function submitAttendance() {
+      alert("✔️ Attendance submitted (dummy – add script integration)");
+    }
+  </script>
 </body>
 </html>
