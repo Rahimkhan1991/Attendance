@@ -1,4 +1,4 @@
-const WEB_APP_URL = "YOUR_DEPLOYED_WEB_APP_URL"; // Replace with your deployed URL
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec"; // Replace with your deployed URL
 const className = localStorage.getItem("selectedClass");
 
 // Common functions
