@@ -28,7 +28,7 @@ async function loadStudentsForAttendance() {
   
   try {
     const response = await fetch(
-      `${"https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec"}?action=getStudents&className=${encodeURIComponent(className)}`
+      `${"https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec"}?action=getStudents&className=${(className)}`
     );
     
     if (!response.ok) {
