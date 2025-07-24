@@ -33,6 +33,10 @@
         } else {
           alert("Failed to load class list");
         }
+        if (action === 'getClassList') {
+  return getClassList();
+}
+
       });
 
     function viewStudents() {
@@ -40,6 +44,13 @@
       localStorage.setItem('selectedClass', className);
       window.location.href = 'view-students.html';
     }
+function getClassList() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Class_List");
+  const data = sheet.getDataRange().getValues().slice(1); // Skip header
+  const classNames = data.map(row => row[0]);
+
+  return ContentService.createTextOutput(JSON.stringify({ success: true, classes: classNames }));
+}
 
     function markAttendance() {
       const className = document.getElementById('classSelector').value;
