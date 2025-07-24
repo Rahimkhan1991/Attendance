@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Attendance Report</title>
@@ -7,21 +7,27 @@
   <link rel="stylesheet" href="style.css">
   <style>
     body {
-      padding: 20px;
       font-family: Arial, sans-serif;
+      padding: 10px;
+      background: #f0f0f0;
+    }
+
+    .container {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
     h2 {
-      color: #333;
+      margin-bottom: 15px;
     }
 
-    .filter-group {
-      margin-bottom: 20px;
-    }
-
-    .summary {
-      margin: 10px 0;
-      font-weight: bold;
+    select, input {
+      padding: 8px;
+      margin: 5px 5px 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
 
     table {
@@ -31,98 +37,109 @@
     }
 
     th, td {
+      padding: 10px;
       border: 1px solid #ddd;
-      padding: 8px;
       text-align: center;
     }
 
     th {
-      background-color: #f2f2f2;
+      background: #007bff;
+      color: white;
     }
 
     .back-btn {
-      background: #555;
+      background: #333;
       color: white;
-      padding: 8px 12px;
-      margin-bottom: 10px;
       border: none;
-      border-radius: 5px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-
   <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
-  <h2>Attendance Report</h2>
 
-  <div class="filter-group">
-    <label for="dateFilter">Filter by Date:</label>
-    <input type="date" id="dateFilter" onchange="loadAttendanceByDate()">
+  <div class="container">
+    <h2>Attendance Report</h2>
+
+    <label for="classSelect">Select Class:</label>
+    <select id="classSelect" onchange="loadReport()">
+      <option value="">--Choose--</option>
+    </select>
+
+    <label for="filterDate">Filter by Date:</label>
+    <input type="date" id="filterDate" onchange="loadReport()">
+
+    <label for="filterMonth">or Month:</label>
+    <input type="month" id="filterMonth" onchange="loadReport()">
+
+    <table id="reportTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Roll No</th>
+          <th>Name</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="4">Please select class & date/month</td></tr>
+      </tbody>
+    </table>
   </div>
-
-  <div class="filter-group">
-    <label for="monthFilter">Filter by Month:</label>
-    <input type="month" id="monthFilter" onchange="loadAttendanceByMonth()">
-  </div>
-
-  <div class="summary" id="summary"></div>
-
-  <table id="reportTable">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Student</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
 
   <script>
-    const ATTENDANCE_KEY = 'attendance_records';
+    const apiBase = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_URL/exec";
 
-    function loadAttendanceByDate() {
-      const selectedDate = document.getElementById('dateFilter').value;
-      if (!selectedDate) return;
-      const data = JSON.parse(localStorage.getItem(ATTENDANCE_KEY)) || [];
-      const filtered = data.filter(record => record.date === selectedDate);
-      renderTable(filtered);
-    }
+    async function fetchClassList() {
+      const res = await fetch(apiBase + "?action=getClassList");
+      const data = await res.json();
+      const classSelect = document.getElementById("classSelect");
 
-    function loadAttendanceByMonth() {
-      const selectedMonth = document.getElementById('monthFilter').value;
-      if (!selectedMonth) return;
-      const data = JSON.parse(localStorage.getItem(ATTENDANCE_KEY)) || [];
-      const filtered = data.filter(record => record.date.startsWith(selectedMonth));
-      renderTable(filtered);
-    }
-
-    function renderTable(data) {
-      const tbody = document.querySelector('#reportTable tbody');
-      tbody.innerHTML = '';
-
-      let present = 0, absent = 0;
-
-      data.forEach(entry => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${entry.date}</td>
-          <td>${entry.name}</td>
-          <td>${entry.status}</td>
-        `;
-        tbody.appendChild(row);
-
-        if (entry.status === 'Present') present++;
-        if (entry.status === 'Absent') absent++;
+      data.classes.forEach(cls => {
+        const opt = document.createElement("option");
+        opt.value = cls;
+        opt.textContent = cls.replace("Class_", "");
+        classSelect.appendChild(opt);
       });
-
-      const summary = document.getElementById('summary');
-      const total = present + absent;
-      const percent = total > 0 ? ((present / total) * 100).toFixed(2) : 0;
-
-      summary.innerText = `✅ Present: ${present}, ❌ Absent: ${absent}, 📊 Percentage: ${percent}%`;
     }
-  </script>
 
+    async function loadReport() {
+      const className = document.getElementById("classSelect").value;
+      const date = document.getElementById("filterDate").value;
+      const month = document.getElementById("filterMonth").value;
+
+      if (!className || (!date && !month)) {
+        return;
+      }
+
+      const filter = date ? `&date=${date}` : `&month=${month}`;
+      const res = await fetch(apiBase + `?action=getAttendanceReport&className=${className}${filter}`);
+      const result = await res.json();
+
+      const tableBody = document.querySelector("#reportTable tbody");
+      tableBody.innerHTML = "";
+
+      if (result.data && result.data.length) {
+        result.data.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.date}</td>
+            <td>${row.roll}</td>
+            <td>${row.name}</td>
+            <td>${row.status}</td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      } else {
+        tableBody.innerHTML = `<tr><td colspan="4">No records found.</td></tr>`;
+      }
+    }
+
+    // On load
+    fetchClassList();
+  </script>
 </body>
 </html>
