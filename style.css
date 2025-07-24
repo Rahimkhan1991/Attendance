@@ -42,6 +42,13 @@ footer {
   border-radius: 6px;
   cursor: pointer;
 }
+.student-checkbox {
+  margin: 8px 0;
+}
+input[type="checkbox"] {
+  margin-right: 10px;
+}
+
 .student-card button:hover {
   background: #c0392b;
 }
