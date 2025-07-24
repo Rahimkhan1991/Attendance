@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mark Attendance</title>
+</head>
+<body>
+  <h2>Mark Attendance for Class1A</h2>
+  <button onclick="markSampleAttendance()">Submit Attendance</button>
+
+  <script>
+    async function markSampleAttendance() {
+      const url = "https://script.google.com/macros/s/AKfycbxZCU7IVN0VTHXtF9nkxK_A_vbe2lp9KqUa5cffzg-Vn-0A9vymO0trxtELam_rbD2muQ/exec"; // Replace with your Apps Script Web App URL
+
+      const payload = {
+        action: "markAttendance",
+        class: "Class1A",
+        date: "2025-07-24", // Change date as needed
+        attendance: [
+          { roll: 1, status: "P" },
+          { roll: 2, status: "A" },
+          { roll: 3, status: "P" }
+        ]
+      };
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await res.text();
+        alert("Response: " + text);
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
