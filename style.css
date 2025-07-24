@@ -1,29 +1,5 @@
 body {
   font-family: Arial, sans-serif;
-  background: #f2f4f8;
-  padding: 20px;
-  margin: 0;
-}
-
-h2 {
-  text-align: center;
-  color: #007bff;
-}
-
-.container {
-  max-width: 800px;
-  margin: auto;
-}
-
-.student-card {
-  background: white;
-  padding: 15px;
-  margin: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-body {
-  font-family: Arial, sans-serif;
   padding: 20px;
   background: #f0f4f8;
 }
@@ -32,10 +8,15 @@ h2 {
   color: #007bff;
 }
 
-.student-card {
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  padding: 10px 15px;
-  margin-bottom: 10px;
+button {
+  padding: 10px 20px;
+  margin: 5px;
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+select {
+  padding: 5px;
 }
