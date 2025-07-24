@@ -91,42 +91,28 @@ function loadStudentList() {
     });
 }
 
-async function submitAttendance() {
-  const submitBtn = document.getElementById('submitBtn');
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Submitting...";
-  
-  try {
-    const selects = document.querySelectorAll("select");
-    const attendance = Array.from(selects).map(select => ({
-      roll: select.dataset.roll,
-      status: select.value
-    }));
-
-    const params = new URLSearchParams();
-    params.append('action', 'markAttendance');
-    params.append('className', className);
-    params.append('data', JSON.stringify(attendance));
-
-    const response = await fetch(WEB_APP_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params
-    });
-
-    const result = await response.json();
-    
-    if (!result.success) {
-      throw new Error(result.message);
-    }
-    
-    alert(`✅ ${result.message}`);
-  } catch (error) {
-    showError(error.message);
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Submit Attendance";
+async function safeFetch(url, options = {}) {
+  // Add JSONP callback parameter
+  if (!url.includes('callback=')) {
+    url += (url.includes('?') ? '&' : '?') + 'callback=callback';
   }
+  
+  return new Promise((resolve, reject) => {
+    // Create script tag for JSONP
+    const script = document.createElement('script');
+    window.callback = (data) => {
+      document.body.removeChild(script);
+      delete window.callback;
+      resolve(data);
+    };
+    
+    script.src = url;
+    script.onerror = () => {
+      document.body.removeChild(script);
+      delete window.callback;
+      reject(new Error('JSONP request failed'));
+    };
+    
+    document.body.appendChild(script);
+  });
 }
