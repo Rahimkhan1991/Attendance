@@ -2,71 +2,98 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student List</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>View Students</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 15px;
-      background: #f0f4f8;
+      padding: 20px;
+      background: #f4f4f4;
     }
 
     h2 {
-      text-align: center;
-      color: #333;
+      color: #007bff;
     }
 
-    .back-btn {
-      background: #ddd;
-      border: none;
-      padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 10px;
-      cursor: pointer;
+    select {
+      padding: 8px;
+      margin-bottom: 20px;
     }
 
-    #studentList {
-      list-style: none;
-      padding: 0;
+    .student-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 10px 15px;
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    .student-item {
-      background: white;
-      padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    .student-info {
       display: flex;
       flex-direction: column;
     }
 
-    .student-name {
-      font-size: 16px;
+    .roll {
       font-weight: bold;
-      margin-bottom: 5px;
     }
 
-    .student-roll {
-      font-size: 14px;
-      color: #555;
-    }
-
-    #loading, #emptyMessage {
-      text-align: center;
+    #studentList {
       margin-top: 20px;
-      color: #666;
     }
   </style>
 </head>
 <body>
-  <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
-  <h2 id="classHeader">Student List</h2>
+  <h2>View Students</h2>
 
-  <div id="loading">Loading students...</div>
-  <div id="emptyMessage" style="display:none;">No students found.</div>
-  <ul id="studentList"></ul>
+  <label for="classSelect">Select Class:</label>
+  <select id="classSelect" onchange="fetchStudents()">
+    <option value="">-- Select Class --</option>
+    <option value="Class_1A">Class 1A</option>
+    <option value="Class_1B">Class 1B</option>
+    <option value="Class_2A">Class 2A</option>
+    <!-- Add more classes as needed -->
+  </select>
 
-  <script src="script.js"></script>
+  <div id="studentList"></div>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+
+    async function fetchStudents() {
+      const className = document.getElementById("classSelect").value;
+      const studentList = document.getElementById("studentList");
+      studentList.innerHTML = "";
+
+      if (!className) return;
+
+      try {
+        const res = await fetch(`${scriptURL}?action=getStudents&className=${className}`);
+        const students = await res.json();
+
+        if (students.length === 0) {
+          studentList.innerHTML = "<p>No students found.</p>";
+          return;
+        }
+
+        students.forEach(student => {
+          const card = document.createElement("div");
+          card.className = "student-card";
+          card.innerHTML = `
+            <div class="student-info">
+              <span class="roll">Roll: ${student.roll}</span>
+              <span class="name">Name: ${student.name}</span>
+            </div>
+          `;
+          studentList.appendChild(card);
+        });
+      } catch (error) {
+        studentList.innerHTML = "<p>Error loading students.</p>";
+        console.error("Failed to fetch students:", error);
+      }
+    }
+  </script>
 </body>
 </html>

@@ -1,154 +1,83 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
-const className = localStorage.getItem("selectedClass");
+function doGet(e) {
+  const action = e.parameter.action;
+  const className = e.parameter.className;
+  
+  if (action === "getStudents") {
+    return getStudents(className);
+  } else if (action === "submitAttendance") {
+    const date = e.parameter.date;
+    const body = e.postData?.contents;
+    return submitAttendance(className, date, body);
+  } else if (action === "getAttendanceReport") {
+    return getAttendanceReport(className);
+  }
+  
+  return ContentService.createTextOutput("Invalid request");
+}
 
-// Init logic
-document.addEventListener("DOMContentLoaded", () => {
-  if (!className) {
-    showError("No class selected. Please go back and select a class.");
-    return;
+// ✅ Get students (Roll & Name only)
+function getStudents(className) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(className);
+  const data = sheet.getDataRange().getValues();
+  const students = [];
+
+  for (let i = 1; i < data.length; i++) {
+    const roll = data[i][0];
+    const name = data[i][1];
+    students.push({ roll, name });
   }
 
-  // Update class header
-  const classHeader = document.getElementById('classHeader');
-  if (classHeader) {
-    classHeader.textContent += `: ${className}`;
+  return ContentService.createTextOutput(JSON.stringify(students))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ✅ Mark attendance for a specific date
+function submitAttendance(className, date, rawData) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(className);
+  const students = JSON.parse(rawData).data;
+  
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  let dateCol = headers.indexOf(date);
+
+  if (dateCol === -1) {
+    dateCol = headers.length;
+    sheet.getRange(1, dateCol + 1).setValue(date);
   }
 
-  // Load correct function based on page
-  if (document.getElementById('attendanceForm')) {
-    loadStudentsForAttendance();
+  for (let i = 0; i < students.length; i++) {
+    const row = i + 2; // since header is row 1
+    const status = students[i].status;
+    sheet.getRange(row, dateCol + 1).setValue(status);
   }
 
-  if (document.getElementById('studentList')) {
-    loadStudentListOnly();
-  }
-});
+  return ContentService.createTextOutput(JSON.stringify({ success: true }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
-// Load students for marking attendance
-async function loadStudentsForAttendance() {
-  showLoading(true);
-  const form = document.getElementById("attendanceForm");
-  form.innerHTML = '';
+// ✅ Fetch attendance report
+function getAttendanceReport(className) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(className);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const report = [];
 
-  try {
-    const response = await fetch(
-      `${WEB_APP_URL}?action=getStudents&className=${encodeURIComponent(className)}`
-    );
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    const roll = row[0];
+    const name = row[1];
 
-    const data = await response.json();
-
-    if (!data.success) throw new Error(data.message || "Failed to load students");
-
-    if (data.students.length === 0) {
-      form.innerHTML = "<p>No students found.</p>";
-      return;
+    for (let j = 2; j < headers.length; j++) {
+      if (row[j]) {
+        report.push({
+          roll,
+          name,
+          date: headers[j],
+          status: row[j]
+        });
+      }
     }
-
-    data.students.forEach(s => {
-      const div = document.createElement("div");
-      div.className = "student";
-      div.innerHTML = `
-        <label>${s.roll} - ${s.name}</label>
-        <select data-roll="${s.roll}">
-          <option value="Present">Present</option>
-          <option value="Absent">Absent</option>
-          <option value="Late">Late</option>
-        </select>
-      `;
-      form.appendChild(div);
-    });
-  } catch (error) {
-    showError(error.message);
-  } finally {
-    showLoading(false);
   }
-}
 
-// Load students for view-student.html
-async function loadStudentListOnly() {
-  showLoading(true);
-  const list = document.getElementById("studentList");
-  const empty = document.getElementById("emptyMessage");
-  list.innerHTML = '';
-
-  try {
-    const response = await fetch(
-      `${WEB_APP_URL}?action=getStudents&className=${encodeURIComponent(className)}`
-    );
-    const data = await response.json();
-
-    if (!data.success) throw new Error(data.message || "Failed to load students");
-
-    if (data.students.length === 0) {
-      empty.style.display = "block";
-      return;
-    }
-
-    data.students.forEach(s => {
-      const li = document.createElement("li");
-      li.className = "student-item";
-      li.innerHTML = `
-        <div class="student-name">${s.name}</div>
-        <div class="student-roll">Roll No: ${s.roll}</div>
-      `;
-      list.appendChild(li);
-    });
-  } catch (error) {
-    showError(error.message);
-  } finally {
-    showLoading(false);
-  }
-}
-
-// Submit attendance
-async function submitAttendance() {
-  const submitBtn = document.getElementById('submitBtn');
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Submitting...";
-
-  try {
-    const selects = document.querySelectorAll("select");
-    const attendance = Array.from(selects).map(select => ({
-      roll: select.dataset.roll,
-      status: select.value
-    }));
-
-    const params = new URLSearchParams();
-    params.append('action', 'markAttendance');
-    params.append('className', className);
-    params.append('data', JSON.stringify(attendance));
-
-    const response = await fetch(WEB_APP_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params
-    });
-
-    const result = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.message || "Failed to save attendance");
-    }
-
-    alert(`✅ ${result.message}`);
-  } catch (error) {
-    showError(error.message);
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Submit Attendance";
-  }
-}
-
-// Helpers
-function showLoading(show) {
-  const loading = document.getElementById('loading');
-  if (loading) loading.style.display = show ? 'block' : 'none';
-}
-
-function showError(message) {
-  console.error(message);
-  alert(`❌ ${message}`);
-  showLoading(false);
+  return ContentService.createTextOutput(JSON.stringify(report))
+    .setMimeType(ContentService.MimeType.JSON);
 }

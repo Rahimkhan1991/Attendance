@@ -1,148 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mark Attendance</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 10px;
-      background: #f5f5f5;
-    }
-
-    .back-btn {
-      background: #555;
-      color: white;
-      padding: 8px 14px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+      padding: 20px;
+      background: #eef2f7;
     }
 
     h2 {
-      text-align: center;
-      color: #333;
+      color: #007bff;
     }
 
-    .student {
-      background: white;
-      padding: 15px;
-      margin-bottom: 10px;
+    select, button {
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    .student-list {
+      margin-top: 20px;
+    }
+
+    .student-item {
+      background: #fff;
+      padding: 10px;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .student-name {
-      font-size: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       margin-bottom: 10px;
-    }
-
-    .radio-group {
       display: flex;
-      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    #submitBtn {
-      background: #34a853;
-      color: white;
-      padding: 12px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      display: block;
-      margin: 20px auto;
+    label {
+      margin-left: 10px;
     }
 
-    #loading {
-      text-align: center;
-      padding: 20px;
-      font-style: italic;
+    .present {
+      accent-color: green;
     }
   </style>
 </head>
 <body>
-  <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
-  <h2 id="classHeader">Mark Attendance</h2>
+  <h2>Mark Attendance</h2>
 
-  <div id="loading">Loading students...</div>
-  <form id="attendanceForm"></form>
+  <label for="classSelect">Select Class:</label>
+  <select id="classSelect" onchange="loadStudents()">
+    <option value="">-- Select Class --</option>
+    <option value="Class_1A">Class 1A</option>
+    <option value="Class_1B">Class 1B</option>
+    <option value="Class_2A">Class 2A</option>
+    <!-- Add more classes -->
+  </select>
 
-  <button id="submitBtn" onclick="submitAttendance(event)">Submit Attendance</button>
+  <div class="student-list" id="studentList"></div>
+
+  <button onclick="submitAttendance()">Submit Attendance</button>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const className = urlParams.get("class") || "Class_1A";
-    document.getElementById("classHeader").innerText = "Mark Attendance - " + className;
-
-    const attendanceForm = document.getElementById("attendanceForm");
-    const loadingDiv = document.getElementById("loading");
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
 
     async function loadStudents() {
-      try {
-        const response = await fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getStudents&className=${className}`);
-        const data = await response.json();
+      const className = document.getElementById("classSelect").value;
+      const studentList = document.getElementById("studentList");
+      studentList.innerHTML = "";
 
-        if (!data || !data.students || data.students.length === 0) {
-          loadingDiv.innerText = "No students found.";
+      if (!className) return;
+
+      try {
+        const res = await fetch(`${scriptURL}?action=getStudents&className=${className}`);
+        const students = await res.json();
+
+        if (students.length === 0) {
+          studentList.innerHTML = "<p>No students found.</p>";
           return;
         }
 
-        loadingDiv.style.display = "none";
-
-        data.students.forEach((student, index) => {
+        students.forEach(student => {
           const div = document.createElement("div");
-          div.className = "student";
+          div.className = "student-item";
           div.innerHTML = `
-            <div class="student-name">${student.name} (Roll: ${student.roll})</div>
-            <div class="radio-group">
-              <label><input type="radio" name="attendance_${index}" value="Present" required> Present</label>
-              <label><input type="radio" name="attendance_${index}" value="Absent"> Absent</label>
+            <div>
+              <strong>${student.roll}</strong> - ${student.name}
             </div>
-            <input type="hidden" name="name_${index}" value="${student.name}">
-            <input type="hidden" name="roll_${index}" value="${student.roll}">
+            <div>
+              <input type="checkbox" class="present" data-roll="${student.roll}" checked>
+              <label>Present</label>
+            </div>
           `;
-          attendanceForm.appendChild(div);
+          studentList.appendChild(div);
         });
-
-        // Store total count
-        const totalInput = document.createElement("input");
-        totalInput.type = "hidden";
-        totalInput.name = "total";
-        totalInput.value = data.students.length;
-        attendanceForm.appendChild(totalInput);
-
       } catch (err) {
-        console.error(err);
-        loadingDiv.innerText = "Failed to load students.";
+        console.error("Error loading students", err);
+        studentList.innerHTML = "<p>Error loading students.</p>";
       }
     }
 
-    async function submitAttendance(e) {
-      e.preventDefault();
-      const formData = new FormData(attendanceForm);
-      formData.append("action", "submitAttendance");
-      formData.append("className", className);
-      formData.append("date", new Date().toLocaleDateString("en-CA")); // YYYY-MM-DD
+    async function submitAttendance() {
+      const className = document.getElementById("classSelect").value;
+      if (!className) return alert("Select a class first.");
+
+      const checkboxes = document.querySelectorAll(".present");
+      const attendance = [];
+
+      checkboxes.forEach(cb => {
+        attendance.push({
+          roll: cb.dataset.roll,
+          status: cb.checked ? "P" : "A"
+        });
+      });
 
       try {
-        const response = await fetch("https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec", {
+        const res = await fetch(scriptURL, {
           method: "POST",
-          body: formData
+          body: JSON.stringify({
+            action: "markAttendance",
+            className,
+            attendance
+          }),
+          headers: {
+            "Content-Type": "application/json"
+          }
         });
 
-        const result = await response.text();
-        alert("Attendance submitted successfully!");
-        window.location.href = "index.html";
+        const result = await res.json();
+        alert(result.message || "Attendance submitted.");
       } catch (err) {
-        console.error(err);
+        console.error("Submit error", err);
         alert("Failed to submit attendance.");
       }
     }
-
-    window.onload = loadStudents;
   </script>
 </body>
 </html>

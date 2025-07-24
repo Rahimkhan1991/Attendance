@@ -1,176 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css">
   <style>
-    .report-container {
+    body {
+      font-family: Arial, sans-serif;
       padding: 20px;
-      max-width: 800px;
-      margin: auto;
+      background: #f3f7fa;
+    }
+
+    h2 {
+      color: #007bff;
+    }
+
+    select, input[type="date"], button {
+      padding: 10px;
+      margin: 10px 5px 20px 0;
+      font-size: 16px;
+    }
+
+    .report {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
+      margin-top: 10px;
     }
 
     th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
     }
 
     th {
       background: #f0f0f0;
     }
 
-    .filter-bar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 15px;
+    .present {
+      color: green;
+      font-weight: bold;
     }
 
-    .filter-bar select,
-    .filter-bar input {
-      padding: 8px;
-    }
-
-    #loading {
-      text-align: center;
-      margin-top: 20px;
+    .absent {
+      color: red;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="report-container">
-    <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
-    <h2>Attendance Report</h2>
+  <h2>Attendance Report</h2>
 
-    <label for="classSelect">Select Class:</label>
-    <select id="classSelect" onchange="fetchAttendanceReport()">
-      <option value="">--Select--</option>
-      <option value="Class_1A">Class 1A</option>
-      <option value="Class_2A">Class 2A</option>
-      <!-- Add more if needed -->
-    </select>
+  <label for="classSelect">Class:</label>
+  <select id="classSelect">
+    <option value="">-- Select Class --</option>
+    <option value="Class_1A">Class 1A</option>
+    <option value="Class_1B">Class 1B</option>
+    <option value="Class_2A">Class 2A</option>
+    <!-- Add more if needed -->
+  </select>
 
-    <div class="filter-bar">
-      <label for="filterDate">Date:</label>
-      <input type="date" id="filterDate" onchange="filterByDate()">
+  <label for="reportDate">Date:</label>
+  <input type="date" id="reportDate" />
 
-      <label for="filterMonth">Month:</label>
-      <input type="month" id="filterMonth" onchange="filterByMonth()">
-    </div>
+  <button onclick="fetchReport()">Get Report</button>
 
-    <div id="loading">Loading...</div>
-    <div id="reportTable"></div>
-  </div>
+  <div class="report" id="reportContainer"></div>
 
   <script>
-    let attendanceData = [];
     const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
 
-    function fetchAttendanceReport() {
-      const className = document.getElementById('classSelect').value;
-      document.getElementById('loading').style.display = 'block';
-      document.getElementById('reportTable').innerHTML = '';
+    async function fetchReport() {
+      const className = document.getElementById("classSelect").value;
+      const reportDate = document.getElementById("reportDate").value;
+      const container = document.getElementById("reportContainer");
 
-      if (!className) return;
-
-      fetch(`${scriptURL}?action=getAttendanceReport&className=${className}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            attendanceData = data.data;
-            renderTable(attendanceData);
-          } else {
-            document.getElementById('reportTable').innerHTML = `<p>${data.message}</p>`;
-          }
-        })
-        .catch(err => {
-          document.getElementById('reportTable').innerHTML = '<p>Error loading data.</p>';
-        })
-        .finally(() => {
-          document.getElementById('loading').style.display = 'none';
-        });
-    }
-
-    function renderTable(data) {
-      if (!data || data.length === 0) {
-        document.getElementById('reportTable').innerHTML = '<p>No data available.</p>';
+      if (!className || !reportDate) {
+        alert("Please select class and date.");
         return;
       }
 
-      const headers = Object.keys(data[0]);
-      let html = `<table><thead><tr>`;
-      headers.forEach(header => {
-        html += `<th>${header}</th>`;
-      });
-      html += `</tr></thead><tbody>`;
+      container.innerHTML = "<p>Loading...</p>";
 
-      data.forEach(row => {
-        html += `<tr>`;
-        headers.forEach(header => {
-          html += `<td>${row[header] || ""}</td>`;
-        });
-        html += `</tr>`;
-      });
+      try {
+        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
+        const data = await res.json();
 
-      html += `</tbody></table>`;
-      document.getElementById('reportTable').innerHTML = html;
-    }
-
-    function filterByDate() {
-      const selectedDate = document.getElementById("filterDate").value;
-      if (!selectedDate || attendanceData.length === 0) return;
-      const formatted = formatDateForSheet(selectedDate);
-
-      const filtered = attendanceData.map(row => {
-        const filteredRow = { Roll: row.Roll, Name: row.Name };
-        if (row[formatted] !== undefined) {
-          filteredRow[formatted] = row[formatted];
+        if (!data || data.length === 0) {
+          container.innerHTML = "<p>No attendance data found for this date.</p>";
+          return;
         }
-        return filteredRow;
-      });
 
-      renderTable(filtered);
-    }
+        let table = `<table>
+                      <tr><th>Roll</th><th>Name</th><th>Status</th></tr>`;
 
-    function filterByMonth() {
-      const selectedMonth = document.getElementById("filterMonth").value;
-      if (!selectedMonth || attendanceData.length === 0) return;
-
-      const filtered = attendanceData.map(row => {
-        const filteredRow = { Roll: row.Roll, Name: row.Name };
-        Object.keys(row).forEach(key => {
-          if (/^\d{2}\/\d{2}\/\d{4}$/.test(key)) {
-            const [day, month, year] = key.split('/');
-            const keyMonth = `${year}-${month.padStart(2, '0')}`;
-            if (keyMonth === selectedMonth) {
-              filteredRow[key] = row[key];
-            }
-          }
+        data.forEach(student => {
+          table += `<tr>
+                      <td>${student.roll}</td>
+                      <td>${student.name}</td>
+                      <td class="${student.status === 'P' ? 'present' : 'absent'}">
+                        ${student.status === 'P' ? 'Present ✅' : 'Absent ❌'}
+                      </td>
+                    </tr>`;
         });
-        return filteredRow;
-      });
 
-      renderTable(filtered);
+        table += `</table>`;
+        container.innerHTML = table;
+      } catch (err) {
+        console.error("Error loading report", err);
+        container.innerHTML = "<p>Failed to load report.</p>";
+      }
     }
-
-    function formatDateForSheet(dateStr) {
-      const [year, month, day] = dateStr.split("-");
-      return `${day}/${month}/${year}`;
-    }
-
-    // Auto-load class if already selected
-    window.onload = () => {
-      const selected = document.getElementById('classSelect').value;
-      if (selected) fetchAttendanceReport();
-    };
   </script>
 </body>
 </html>
