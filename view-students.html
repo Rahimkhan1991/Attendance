@@ -2,12 +2,13 @@
 <html>
 <head>
   <title>Students</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   <style>
     #studentList {
       list-style: none;
       padding: 0;
+      margin-top: 20px;
     }
     .student-item {
       background: white;
@@ -20,6 +21,16 @@
       background: #6c757d;
       margin-bottom: 20px;
     }
+    #classNameDisplay {
+      color: #2c3e50;
+      font-weight: bold;
+    }
+    #loading {
+      padding: 15px;
+      text-align: center;
+      font-style: italic;
+      color: #6c757d;
+    }
   </style>
 </head>
 <body>
@@ -29,6 +40,52 @@
   <div id="loading">Loading students...</div>
   <ul id="studentList"></ul>
   
-  <script src="script.js"></script>
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const className = localStorage.getItem("selectedClass") || "Class_1A";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById('classNameDisplay').textContent = className;
+      loadStudentList();
+    });
+
+    function loadStudentList() {
+      const loading = document.getElementById('loading');
+      const list = document.getElementById('studentList');
+      
+      loading.style.display = 'block';
+      list.innerHTML = '';
+      
+      fetch(`${WEB_APP_URL}?action=getStudents&className=${encodeURIComponent(className)}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Network response was not ok');
+          return res.json();
+        })
+        .then(data => {
+          loading.style.display = 'none';
+          
+          if (!data.success) {
+            throw new Error(data.message || 'Failed to load student list');
+          }
+
+          if (data.students.length === 0) {
+            list.innerHTML = '<li class="student-item">No students found in this class</li>';
+            return;
+          }
+
+          data.students.forEach(s => {
+            const li = document.createElement("li");
+            li.className = "student-item";
+            li.textContent = `${s.roll} - ${s.name}`;
+            list.appendChild(li);
+          });
+        })
+        .catch(err => {
+          loading.style.display = 'none';
+          list.innerHTML = `<li class="student-item" style="color:red">Error: ${err.message}</li>`;
+          console.error('Error loading students:', err);
+        });
+    }
+  </script>
 </body>
 </html>
