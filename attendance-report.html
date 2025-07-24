@@ -72,7 +72,7 @@
 
   <script>
     let attendanceData = [];
-    const scriptURL = "https://script.google.com/macros/s/AKfycbwrU396WRIPhEYDtFgCGA3ayag4NE8ibnFl7AxMX1swT-F7twQOgC1crhaJmEZxV7D3eA/exec";
+    const scriptURL = "https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_URL/exec";
 
     function fetchAttendanceReport() {
       const className = document.getElementById('classSelect').value;
@@ -81,11 +81,15 @@
 
       if (!className) return;
 
-      fetch(`${scriptURL}?action=getAttendance&className=${className}`)
+      fetch(`${scriptURL}?action=getAttendanceReport&className=${className}`)
         .then(res => res.json())
         .then(data => {
-          attendanceData = data;
-          renderTable(data);
+          if (data.success) {
+            attendanceData = data.data;
+            renderTable(attendanceData);
+          } else {
+            document.getElementById('reportTable').innerHTML = `<p>${data.message}</p>`;
+          }
         })
         .catch(err => {
           document.getElementById('reportTable').innerHTML = '<p>Error loading data.</p>';
@@ -111,7 +115,7 @@
       data.forEach(row => {
         html += `<tr>`;
         headers.forEach(header => {
-          html += `<td>${row[header]}</td>`;
+          html += `<td>${row[header] || ""}</td>`;
         });
         html += `</tr>`;
       });
@@ -162,7 +166,7 @@
       return `${day}/${month}/${year}`;
     }
 
-    // Load default if already selected
+    // Auto-load class if already selected
     window.onload = () => {
       const selected = document.getElementById('classSelect').value;
       if (selected) fetchAttendanceReport();
