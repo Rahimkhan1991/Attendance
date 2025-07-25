@@ -1,139 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mark Attendance</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #eef2f7;
-    }
-
-    h2 {
-      color: #007bff;
-    }
-
-    select, button {
-      padding: 10px;
-      margin: 10px 0;
-      font-size: 16px;
-    }
-
-    .student-list {
-      margin-top: 20px;
-    }
-
-    .student-item {
-      background: #fff;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    label {
-      margin-left: 10px;
-    }
-
-    .present {
-      accent-color: green;
-    }
-  </style>
 </head>
 <body>
   <h2>Mark Attendance</h2>
-
-  <label for="classSelect">Select Class:</label>
-  <select id="classSelect" onchange="loadStudents()">
-    <option value="">-- Select Class --</option>
-    <option value="Class_1A">Class 1A</option>
-    <option value="Class_1B">Class 1B</option>
-    <option value="Class_2A">Class 2A</option>
-    <!-- Add more classes -->
-  </select>
-
-  <div class="student-list" id="studentList"></div>
-
-  <button onclick="submitAttendance()">Submit Attendance</button>
+  <select id="classSelect"></select>
+  <input type="date" id="attendanceDate" />
+  <ul id="studentList"></ul>
+  <button onclick="submitAttendance()">Submit</button>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const webAppUrl = "YOUR_WEB_APP_URL";
+    const classSelect = document.getElementById("classSelect");
+    const studentList = document.getElementById("studentList");
+    const dateInput = document.getElementById("attendanceDate");
 
-    async function loadStudents() {
-      const className = document.getElementById("classSelect").value;
-      const studentList = document.getElementById("studentList");
-      studentList.innerHTML = "";
+    const classes = ["Class_1A", "Class_2B", "Class_3C"];
+    classes.forEach(cls => {
+      const opt = document.createElement("option");
+      opt.value = cls;
+      opt.text = cls;
+      classSelect.appendChild(opt);
+    });
 
-      if (!className) return;
+    classSelect.addEventListener("change", loadStudents);
 
-      try {
-        const res = await fetch(`${scriptURL}?action=getStudents&className=${className}`);
-        const students = await res.json();
-
-        if (students.length === 0) {
-          studentList.innerHTML = "<p>No students found.</p>";
-          return;
-        }
-
-        students.forEach(student => {
-          const div = document.createElement("div");
-          div.className = "student-item";
-          div.innerHTML = `
-            <div>
-              <strong>${student.roll}</strong> - ${student.name}
-            </div>
-            <div>
-              <input type="checkbox" class="present" data-roll="${student.roll}" checked>
-              <label>Present</label>
-            </div>
-          `;
-          studentList.appendChild(div);
+    function loadStudents() {
+      const className = classSelect.value;
+      fetch(`${webAppUrl}?action=getStudents&className=${className}`)
+        .then(res => res.json())
+        .then(data => {
+          studentList.innerHTML = "";
+          data.forEach(s => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+              <label>
+                <input type="checkbox" data-index="${s.rowIndex}" checked />
+                ${s.roll} - ${s.name}
+              </label>
+            `;
+            studentList.appendChild(li);
+          });
         });
-      } catch (err) {
-        console.error("Error loading students", err);
-        studentList.innerHTML = "<p>Error loading students.</p>";
-      }
     }
 
-    async function submitAttendance() {
-      const className = document.getElementById("classSelect").value;
-      if (!className) return alert("Select a class first.");
+    function submitAttendance() {
+      const className = classSelect.value;
+      const date = dateInput.value;
+      if (!date) return alert("Please select a date");
 
-      const checkboxes = document.querySelectorAll(".present");
-      const attendance = [];
+      const checkboxes = studentList.querySelectorAll("input[type='checkbox']");
+      const data = Array.from(checkboxes).map(cb => ({
+        rowIndex: parseInt(cb.dataset.index),
+        present: cb.checked
+      }));
 
-      checkboxes.forEach(cb => {
-        attendance.push({
-          roll: cb.dataset.roll,
-          status: cb.checked ? "P" : "A"
+      fetch(`${webAppUrl}?action=submitAttendance&className=${className}&date=${date}&data=${encodeURIComponent(JSON.stringify(data))}`)
+        .then(res => res.json())
+        .then(result => {
+          alert(result.success ? "Attendance submitted!" : "Error");
         });
-      });
-
-      try {
-        const res = await fetch(scriptURL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "markAttendance",
-            className,
-            attendance
-          }),
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-
-        const result = await res.json();
-        alert(result.message || "Attendance submitted.");
-      } catch (err) {
-        console.error("Submit error", err);
-        alert("Failed to submit attendance.");
-      }
     }
+
+    loadStudents();
   </script>
 </body>
 </html>

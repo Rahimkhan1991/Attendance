@@ -1,123 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f3f7fa;
-    }
-
-    h2 {
-      color: #007bff;
-    }
-
-    select, input[type="date"], button {
-      padding: 10px;
-      margin: 10px 5px 20px 0;
-      font-size: 16px;
-    }
-
-    .report {
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-    }
-
-    th {
-      background: #f0f0f0;
-    }
-
-    .present {
-      color: green;
-      font-weight: bold;
-    }
-
-    .absent {
-      color: red;
-      font-weight: bold;
-    }
-  </style>
 </head>
 <body>
   <h2>Attendance Report</h2>
-
-  <label for="classSelect">Class:</label>
-  <select id="classSelect">
-    <option value="">-- Select Class --</option>
-    <option value="Class_1A">Class 1A</option>
-    <option value="Class_1B">Class 1B</option>
-    <option value="Class_2A">Class 2A</option>
-    <!-- Add more if needed -->
-  </select>
-
-  <label for="reportDate">Date:</label>
-  <input type="date" id="reportDate" />
-
-  <button onclick="fetchReport()">Get Report</button>
-
-  <div class="report" id="reportContainer"></div>
+  <select id="classSelect"></select>
+  <div id="reportContainer"></div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const webAppUrl = "YOUR_WEB_APP_URL";
+    const classSelect = document.getElementById("classSelect");
+    const reportContainer = document.getElementById("reportContainer");
 
-    async function fetchReport() {
-      const className = document.getElementById("classSelect").value;
-      const reportDate = document.getElementById("reportDate").value;
-      const container = document.getElementById("reportContainer");
+    const classes = ["Class_1A", "Class_2B", "Class_3C"];
+    classes.forEach(cls => {
+      const opt = document.createElement("option");
+      opt.value = cls;
+      opt.text = cls;
+      classSelect.appendChild(opt);
+    });
 
-      if (!className || !reportDate) {
-        alert("Please select class and date.");
-        return;
-      }
+    classSelect.addEventListener("change", loadReport);
 
-      container.innerHTML = "<p>Loading...</p>";
-
-      try {
-        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
-        const data = await res.json();
-
-        if (!data || data.length === 0) {
-          container.innerHTML = "<p>No attendance data found for this date.</p>";
-          return;
-        }
-
-        let table = `<table>
-                      <tr><th>Roll</th><th>Name</th><th>Status</th></tr>`;
-
-        data.forEach(student => {
-          table += `<tr>
-                      <td>${student.roll}</td>
-                      <td>${student.name}</td>
-                      <td class="${student.status === 'P' ? 'present' : 'absent'}">
-                        ${student.status === 'P' ? 'Present ✅' : 'Absent ❌'}
-                      </td>
-                    </tr>`;
+    function loadReport() {
+      const className = classSelect.value;
+      fetch(`${webAppUrl}?action=getAttendanceReport&className=${className}`)
+        .then(res => res.json())
+        .then(data => {
+          reportContainer.innerHTML = "";
+          data.forEach(s => {
+            const div = document.createElement("div");
+            div.innerHTML = `<strong>${s.roll} - ${s.name}</strong><br>`;
+            for (const date in s.attendance) {
+              div.innerHTML += `${date}: ${s.attendance[date]}<br>`;
+            }
+            div.style.borderBottom = "1px solid #ccc";
+            div.style.marginBottom = "10px";
+            reportContainer.appendChild(div);
+          });
         });
-
-        table += `</table>`;
-        container.innerHTML = table;
-      } catch (err) {
-        console.error("Error loading report", err);
-        container.innerHTML = "<p>Failed to load report.</p>";
-      }
     }
+
+    loadReport();
   </script>
 </body>
 </html>
