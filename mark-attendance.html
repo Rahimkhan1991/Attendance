@@ -27,7 +27,7 @@
 
     let students = [];
 
-    fetch(`https://script.google.com/macros/s/AKfycbw.../exec?action=getStudents&className=${className}`)
+    fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getStudents&className=${className}`)
       .then(res => res.json())
       .then(data => {
         students = data;
@@ -56,7 +56,7 @@
         present: document.querySelector(`input[name="att-${i}"]:checked`).value === "P"
       }));
 
-      fetch(`https://script.google.com/macros/s/AKfycbw.../exec?action=submitAttendance&className=${className}&date=${date}&data=${encodeURIComponent(JSON.stringify(attendance))}`)
+      fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=submitAttendance&className=${className}&date=${date}&data=${encodeURIComponent(JSON.stringify(attendance))}`)
         .then(res => res.json())
         .then(res => {
           if (res.success) alert("Attendance saved!");

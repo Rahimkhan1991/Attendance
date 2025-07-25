@@ -22,7 +22,7 @@
     const className = localStorage.getItem('selectedClass');
     document.getElementById('className').textContent = className || 'Not selected';
 
-    fetch(`https://script.google.com/macros/s/AKfycbw.../exec?action=getStudents&className=${className}`)
+    fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getStudents&className=${className}`)
       .then(res => res.json())
       .then(data => {
         const container = document.getElementById('students');
