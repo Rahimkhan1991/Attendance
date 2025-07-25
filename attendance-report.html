@@ -64,7 +64,7 @@
     <option value="Class_1A">Class 1A</option>
     <option value="Class_1B">Class 1B</option>
     <option value="Class_2A">Class 2A</option>
-    <!-- Add more if needed -->
+    <!-- Add more classes if needed -->
   </select>
 
   <label for="reportDate">Date:</label>
@@ -83,36 +83,45 @@
       const container = document.getElementById("reportContainer");
 
       if (!className || !reportDate) {
-        alert("Please select class and date.");
+        alert("Please select both class and date.");
         return;
       }
 
       container.innerHTML = "<p>Loading...</p>";
 
       try {
-        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
-        const data = await res.json();
+        const url = `${scriptURL}?action=getAttendanceReport&className=${encodeURIComponent(className)}&date=${encodeURIComponent(reportDate)}`;
+        const response = await fetch(url);
+        const data = await response.json();
 
-       
+        if (!data || !Array.isArray(data)) {
+          container.innerHTML = "<p>No data found or invalid format.</p>";
+          return;
+        }
+
+        if (data.length === 0) {
+          container.innerHTML = "<p>No attendance found for this date.</p>";
+          return;
+        }
 
         let table = `<table>
                       <tr><th>Roll</th><th>Name</th><th>Status</th></tr>`;
 
         data.forEach(student => {
+          const statusClass = student.status === 'P' ? 'present' : 'absent';
+          const statusText = student.status === 'P' ? 'Present ✅' : 'Absent ❌';
           table += `<tr>
                       <td>${student.Roll}</td>
                       <td>${student.Name}</td>
-                      <td class="${student.status === 'P' ? 'present' : 'absent'}">
-                        ${student.status === 'P' ? 'Present ✅' : 'Absent ❌'}
-                      </td>
+                      <td class="${statusClass}">${statusText}</td>
                     </tr>`;
         });
 
         table += `</table>`;
         container.innerHTML = table;
       } catch (err) {
-        console.error("Error loading report", err);
-        container.innerHTML = "<p>Failed to load report.</p>";
+        console.error("Error loading report:", err);
+        container.innerHTML = "<p style='color: red;'>Failed to load attendance report.</p>";
       }
     }
   </script>
