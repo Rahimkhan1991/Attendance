@@ -1,15 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Attendance Report</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f0f2f5;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 10px;
+      padding: 20px;
+      background-color: #f4f6f9;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
     }
 
     h2 {
@@ -17,22 +26,37 @@
       color: #007bff;
     }
 
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 15px;
     }
 
-    select, input[type="date"], button {
-      width: 100%;
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    select, input[type="date"] {
       padding: 10px;
-      margin: 10px 0;
       font-size: 16px;
-      border-radius: 6px;
+      border-radius: 8px;
       border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #218838;
     }
 
     table {
@@ -42,142 +66,125 @@
     }
 
     th, td {
-      padding: 10px;
+      padding: 12px;
       text-align: left;
-      border-bottom: 1px solid #ccc;
+      border: 1px solid #ccc;
     }
 
-    .download-btn {
-      background-color: #28a745;
+    th {
+      background-color: #007bff;
       color: white;
-      font-weight: bold;
     }
 
-    .message {
-      margin-top: 20px;
-      text-align: center;
-      color: red;
+    @media (max-width: 600px) {
+      .form-group {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Attendance Report</h2>
-    
-    <label for="classSelect">Select Class</label>
-    <select id="classSelect"></select>
-
-    <label for="dateInput">Select Date</label>
-    <input type="date" id="dateInput" />
-
-    <button onclick="fetchAttendance()">Show Report</button>
-    <button class="download-btn" onclick="downloadCSV()">Download CSV</button>
-
-    <div id="message" class="message"></div>
-    <table id="reportTable" style="display:none;">
-      <thead>
-        <tr>
-          <th>Roll No</th>
-          <th>Name</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="form-group">
+      <label for="classSelect">Select Class:</label>
+      <select id="classSelect"></select>
+    </div>
+    <div class="form-group">
+      <label for="dateInput">Select Date:</label>
+      <input type="date" id="dateInput" />
+    </div>
+    <button onclick="fetchAttendance()">Get Report</button>
+    <button onclick="downloadCSV()">Download CSV</button>
+    <div id="reportTableContainer"></div>
   </div>
 
   <script>
-    const BASE_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const classSelect = document.getElementById("classSelect");
 
-    const user = JSON.parse(localStorage.getItem('user')) || {};
-    const classSelect = document.getElementById('classSelect');
-    const dateInput = document.getElementById('dateInput');
-    const messageDiv = document.getElementById('message');
-    const reportTable = document.getElementById('reportTable');
-    const reportBody = reportTable.querySelector('tbody');
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    const role = user?.role;
+    const assignedClass = user?.assignedClass;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!user || !user.role) {
-        alert("Unauthorized. Please login.");
-        window.location.href = "index.html";
-        return;
-      }
+    const classList = [
+      "Class_1A", "Class_1B", "Class_2A", "Class_2B",
+      "Class_3A", "Class_3B", "Class_4A", "Class_4B"
+    ];
 
-      if (user.role === 'admin') {
-        loadAllClasses();
-      } else {
-        // teacher
-        const option = document.createElement('option');
-        option.value = user.assignedClass;
-        option.textContent = user.assignedClass;
-        classSelect.appendChild(option);
-      }
-    });
-
-    function loadAllClasses() {
-      const classes = ["Class_1A", "Class_1B", "Class_2A", "Class_2B"]; // Add your actual class list here
-      classes.forEach(cls => {
-        const option = document.createElement('option');
-        option.value = cls;
-        option.textContent = cls;
-        classSelect.appendChild(option);
+    function populateClasses() {
+      classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+      classList.forEach(cls => {
+        if (role === "admin" || cls === assignedClass) {
+          const option = document.createElement("option");
+          option.value = cls;
+          option.textContent = cls.replace("Class_", "Class ");
+          classSelect.appendChild(option);
+        }
       });
     }
 
+    populateClasses();
+
     function fetchAttendance() {
-      messageDiv.textContent = '';
-      reportTable.style.display = 'none';
-      reportBody.innerHTML = '';
-
       const selectedClass = classSelect.value;
-      const selectedDate = dateInput.value;
-
-      if (!selectedClass || !selectedDate) {
-        messageDiv.textContent = "Please select both class and date.";
+      const date = document.getElementById("dateInput").value;
+      if (!selectedClass || !date) {
+        alert("Please select both class and date.");
         return;
       }
 
-      const formattedDate = selectedDate.split('-').reverse().join('/'); // Format: DD/MM/YYYY
+      const d = new Date(date);
+      const formattedDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 
-      fetch(`${BASE_URL}?action=getAttendance&className=${selectedClass}&date=${formattedDate}`)
+      const url = `${scriptURL}?action=getAttendance&className=${selectedClass}&date=${formattedDate}`;
+      fetch(url)
         .then(res => res.json())
-        .then(data => {
-          if (!data || data.length === 0) {
-            messageDiv.textContent = "No attendance records found.";
-            return;
-          }
-
-          data.forEach(row => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${row.roll}</td><td>${row.name}</td><td>${row.status}</td>`;
-            reportBody.appendChild(tr);
-          });
-
-          reportTable.style.display = 'table';
-        })
+        .then(data => renderTable(data))
         .catch(err => {
           console.error(err);
-          messageDiv.textContent = "Error fetching attendance.";
+          alert("Error fetching attendance data.");
         });
     }
 
-    function downloadCSV() {
-      if (!reportTable.style.display || reportTable.style.display === 'none') {
-        alert("No data to download.");
+    function renderTable(data) {
+      if (!Array.isArray(data)) {
+        alert("No attendance data available.");
         return;
       }
 
-      let csv = "Roll No,Name,Status\n";
-      document.querySelectorAll("#reportTable tbody tr").forEach(row => {
-        const cols = row.querySelectorAll("td");
-        csv += `${cols[0].textContent},${cols[1].textContent},${cols[2].textContent}\n`;
+      let html = `<table><thead><tr><th>Roll No</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
+      data.forEach(row => {
+        html += `<tr>
+          <td>${row.roll || ""}</td>
+          <td>${row.name || ""}</td>
+          <td>${row.status || "Absent"}</td>
+        </tr>`;
+      });
+      html += "</tbody></table>";
+      document.getElementById("reportTableContainer").innerHTML = html;
+    }
+
+    function downloadCSV() {
+      const table = document.querySelector("table");
+      if (!table) {
+        alert("Please generate a report first.");
+        return;
+      }
+
+      let csv = "";
+      const rows = table.querySelectorAll("tr");
+      rows.forEach(row => {
+        const cols = row.querySelectorAll("td, th");
+        const rowData = Array.from(cols).map(col => `"${col.innerText}"`).join(",");
+        csv += rowData + "\n";
       });
 
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = "attendance-report.csv";
-      link.click();
+      const blob = new Blob([csv], { type: "text/csv" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "attendance_report.csv";
+      a.click();
     }
   </script>
 </body>
