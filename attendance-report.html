@@ -1,219 +1,217 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: 'Inter', sans-serif;
-    }
-
     body {
-      background: #74ebd5;
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
       margin: 0;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: #ffffff;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 10px;
     }
 
     h2 {
+      color: #007bff;
       text-align: center;
-      margin-bottom: 24px;
-      color: #333;
     }
 
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: 600;
+    .filter-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
-    select, input[type="date"] {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 15px;
-      border: none;
-      background-color: #4f46e5;
-      color: white;
+    .filter-container label {
       font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s ease;
     }
 
-    button:hover {
-      background-color: #4338ca;
+    .filter-container select,
+    .filter-container input[type="date"] {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
     }
 
-    table {
+    #reportTable {
       width: 100%;
-      margin-top: 20px;
       border-collapse: collapse;
-      font-size: 14px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
     }
 
-    th, td {
+    #reportTable th, #reportTable td {
       border: 1px solid #ddd;
       padding: 10px;
-      text-align: left;
+      text-align: center;
     }
 
-    th {
-      background-color: #f5f5f5;
+    #reportTable th {
+      background-color: #007bff;
+      color: white;
     }
 
-    @media screen and (max-width: 600px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
+    .btn {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+
+    @media (max-width: 600px) {
+      .filter-container {
+        font-size: 14px;
       }
 
-      thead {
-        display: none;
-      }
-
-      tr {
-        margin-bottom: 10px;
-        background: #f9f9f9;
-        border-radius: 8px;
-        padding: 10px;
-      }
-
-      td {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 10px;
-      }
-
-      td::before {
-        content: attr(data-label);
-        font-weight: bold;
-        color: #333;
+      #reportTable th, #reportTable td {
+        padding: 8px;
       }
     }
   </style>
 </head>
-
 <body>
-  <div class="container">
-    <h2>Attendance Report</h2>
-    <label for="classSelect">Class:</label>
+  <h2>Attendance Report</h2>
+
+  <div class="filter-container">
+    <label for="classSelect">Select Class:</label>
     <select id="classSelect"></select>
 
-    <label for="dateSelect">Date:</label>
-    <input type="date" id="dateSelect" />
+    <label for="dateInput">Select Date:</label>
+    <input type="date" id="dateInput" />
 
-    <button onclick="fetchReport()">Show Report</button>
-    <button onclick="downloadCSV()">Download CSV</button>
-
-    <table id="reportTable" style="display: none;">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Roll No</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="reportBody"></tbody>
-    </table>
+    <button class="btn" onclick="fetchReport()">Show Report</button>
+    <button class="btn" onclick="downloadCSV()">Download CSV</button>
   </div>
 
-  <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
-    const user = JSON.parse(localStorage.getItem("attendanceUser"));
-    if (!user) {
-      window.location.href = "login.html";
-    }
+  <table id="reportTable">
+    <thead>
+      <tr>
+        <th>Roll No</th>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="reportBody">
+      <tr><td colspan="4">No data yet</td></tr>
+    </tbody>
+  </table>
 
+  <script>
+    const userData = JSON.parse(localStorage.getItem("loggedInUser"));
     const classSelect = document.getElementById("classSelect");
-    const dateSelect = document.getElementById("dateSelect");
+
+    const classList = {
+      admin: ["Class_1A", "Class_1B", "Class_2A", "Class_2B"],
+      teacher1: ["Class_1A"],
+      teacher2: ["Class_2A"]
+    };
 
     window.onload = () => {
-      if (user.role === "teacher") {
-        classSelect.innerHTML = `<option value="${user.assignedClass}">${user.assignedClass}</option>`;
+      if (!userData || !userData.role) {
+        alert("Please login first");
+        window.location.href = "index.html";
+        return;
+      }
+
+      let allowedClasses = [];
+      if (userData.role === "admin") {
+        allowedClasses = classList["admin"];
+      } else {
+        allowedClasses = classList[userData.username] || [];
+      }
+
+      allowedClasses.forEach(cls => {
+        const option = document.createElement("option");
+        option.value = cls;
+        option.textContent = cls;
+        classSelect.appendChild(option);
+      });
+
+      if (allowedClasses.length === 1) {
+        classSelect.value = allowedClasses[0];
         classSelect.disabled = true;
-      } else if (user.role === "admin") {
-        const allClasses = ["Class_1A", "Class_1B", "Class_2A", "Class_2B"]; // Add more as needed
-        classSelect.innerHTML = allClasses.map(cls => `<option value="${cls}">${cls}</option>`).join("");
       }
     };
 
     function fetchReport() {
       const className = classSelect.value;
-      const reportDate = dateSelect.value;
-      if (!reportDate) {
-        alert("Please select a date.");
+      const dateInput = document.getElementById("dateInput").value;
+
+      if (!className || !dateInput) {
+        alert("Please select class and date");
         return;
       }
 
-      const dateParts = reportDate.split("-");
-      const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-      const url = `${scriptURL}?action=getAttendance&className=${className}&date=${formattedDate}`;
+      const date = new Date(dateInput);
+      const selectedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
 
-      fetch(url)
+      fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendance&className=${className}&date=${selectedDate}`)
         .then(res => res.json())
         .then(data => {
-          const table = document.getElementById("reportTable");
           const tbody = document.getElementById("reportBody");
           tbody.innerHTML = "";
 
-          if (!data.length) {
-            alert("No data found for this date.");
-            table.style.display = "none";
-            return;
+          if (data && data.length > 0) {
+            data.forEach(row => {
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${row.roll}</td>
+                <td>${row.name}</td>
+                <td>${row.status}</td>
+                <td>${row.date}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+          } else {
+            tbody.innerHTML = `<tr><td colspan="4">No records found</td></tr>`;
           }
-
-          data.forEach(row => {
-            tbody.innerHTML += `
-              <tr>
-                <td data-label="Name">${row.name}</td>
-                <td data-label="Roll No">${row.roll}</td>
-                <td data-label="Status">${row.status}</td>
-              </tr>`;
-          });
-
-          table.style.display = "table";
         })
         .catch(err => {
-          alert("Error fetching attendance data.");
-          console.error(err);
+          console.error("Error:", err);
+          alert("Failed to load data");
         });
     }
 
     function downloadCSV() {
-      const rows = [["Name", "Roll No", "Status"]];
-      document.querySelectorAll("#reportBody tr").forEach(tr => {
-        const cols = Array.from(tr.children).map(td => td.textContent);
-        rows.push(cols);
+      const rows = document.querySelectorAll("#reportTable tr");
+      if (rows.length < 2) {
+        alert("No data to download");
+        return;
+      }
+
+      let csv = "";
+      rows.forEach(row => {
+        const cols = row.querySelectorAll("th, td");
+        const rowData = [];
+        cols.forEach(col => rowData.push(`"${col.innerText}"`));
+        csv += rowData.join(",") + "\n";
       });
 
-      const csv = rows.map(r => r.join(",")).join("\n");
       const blob = new Blob([csv], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      const date = dateSelect.value || "report";
-      link.download = `Attendance_${classSelect.value}_${date}.csv`;
-      link.click();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "AttendanceReport.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
     }
   </script>
 </body>
-
 </html>
