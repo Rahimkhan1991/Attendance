@@ -6,61 +6,26 @@
   <title>Attendance Report</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Arial, sans-serif;
       padding: 20px;
       background: #f3f7fa;
-      color: #333;
-      margin: 0;
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-    }
-
-    header img {
-      height: 50px;
-    }
-
-    header h2 {
+    h2 {
       color: #007bff;
-      font-size: 24px;
-      margin: 10px 0;
-    }
-
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 20px 0;
     }
 
     select, input[type="date"], button {
       padding: 10px;
+      margin: 10px 5px 20px 0;
       font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-
-    button {
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-      border: none;
-    }
-
-    button:hover {
-      background: #0056b3;
     }
 
     .report {
       background: white;
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow-x: auto;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
 
     table {
@@ -70,168 +35,78 @@
     }
 
     th, td {
-      padding: 12px;
+      padding: 10px;
       border-bottom: 1px solid #ddd;
       text-align: left;
     }
 
     th {
       background: #f0f0f0;
-      position: sticky;
-      top: 0;
-      z-index: 1;
     }
 
-    .present {
-      color: green;
-      font-weight: bold;
-    }
-
-    .absent {
-      color: red;
-      font-weight: bold;
-    }
-
-    .summary {
-      margin-top: 15px;
-      font-weight: bold;
-    }
-
-    .actions {
-      margin-top: 10px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .dark-mode {
-      background: #1f1f1f;
-      color: #eee;
-    }
-
-    .dark-mode .report {
-      background: #2a2a2a;
-    }
-
-    .dark-mode table, .dark-mode th {
-      background: #333;
-      color: #eee;
-    }
-
-    .toggle-theme {
-      background: #333;
-      color: white;
-    }
-
-    @media screen and (max-width: 600px) {
-      .filters {
-        flex-direction: column;
-      }
+    #logo {
+      max-height: 50px;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
+  <img src="logo.png" id="logo" alt="Logo" />
+  <h2>Attendance Report</h2>
 
-  <header>
-    <img src="https://dummyimage.com/120x50/007bff/ffffff&text=School+Logo" alt="Logo">
-    <h2>Attendance Report</h2>
-  </header>
-
-  <div class="filters">
-    <select id="classSelect">
-      <option value="">-- Select Class --</option>
-      <option value="Class_1A">Class 1A</option>
-      <option value="Class_1B">Class 1B</option>
-      <option value="Class_2A">Class 2A</option>
-    </select>
-
-    <input type="date" id="reportDate" />
-    <button onclick="fetchReport()">Get Report</button>
-    <button onclick="exportCSV()">Download CSV</button>
-    <button onclick="window.print()">Download PDF</button>
-    <button onclick="toggleTheme()" class="toggle-theme">🌙 Dark Mode</button>
-  </div>
+  <input type="date" id="datePicker" />
+  <button onclick="loadReport()">Load Report</button>
 
   <div class="report" id="reportContainer">
-    <!-- Report will be injected here -->
+    <p>Select a date to view the attendance report.</p>
   </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const urlParams = new URLSearchParams(window.location.search);
+    const className = urlParams.get("class");
 
-    async function fetchReport() {
-      const className = document.getElementById("classSelect").value;
-      const reportDate = document.getElementById("reportDate").value;
-      const container = document.getElementById("reportContainer");
+    if (!className) {
+      document.getElementById("reportContainer").innerHTML = `<p style="color:red;">No class selected. Please go back and choose a class.</p>`;
+      document.querySelector("button").disabled = true;
+      document.getElementById("datePicker").disabled = true;
+    }
 
-      if (!className || !reportDate) {
-        alert("Please select class and date.");
-        return;
-      }
+    function formatDateToDDMMYYYY(dateStr) {
+      const date = new Date(dateStr);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
 
-      container.innerHTML = "<p>Loading...</p>";
+    function loadReport() {
+      const dateInput = document.getElementById("datePicker").value;
+      if (!dateInput) return alert("Please select a date.");
 
-      try {
-        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
-        const data = await res.json();
+      const selectedDate = formatDateToDDMMYYYY(dateInput);
 
-        if (!data || data.length === 0) {
-          container.innerHTML = "<p>No attendance data found for this date.</p>";
-          return;
-        }
+      fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendance&className=${className}`)
+        .then(res => res.json())
+        .then(data => {
+          const attendance = data[selectedDate];
 
-        let presentCount = 0;
-        let absentCount = 0;
+          if (!attendance) {
+            document.getElementById("reportContainer").innerHTML = `<p style="color:red;">No attendance data found for this date.</p>`;
+            return;
+          }
 
-        let table = `<table id="attendanceTable">
-                      <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
+          let table = `<table><tr><th>Roll No</th><th>Name</th><th>Status</th></tr>`;
+          attendance.forEach(student => {
+            table += `<tr><td>${student.roll}</td><td>${student.name}</td><td>${student.status}</td></tr>`;
+          });
+          table += `</table>`;
 
-        data.forEach(student => {
-          const status = student.status === 'P' ? 'Present ✅' : 'Absent ❌';
-          const statusClass = student.status === 'P' ? 'present' : 'absent';
-          if (student.status === 'P') presentCount++; else absentCount++;
-
-          table += `<tr>
-                      <td>${student.roll}</td>
-                      <td>${student.name}</td>
-                      <td class="${statusClass}">${status}</td>
-                    </tr>`;
+          document.getElementById("reportContainer").innerHTML = table;
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById("reportContainer").innerHTML = `<p style="color:red;">Error loading data.</p>`;
         });
-
-        table += `</tbody></table>
-                  <div class="summary">✅ Total Present: ${presentCount} | ❌ Total Absent: ${absentCount}</div>`;
-        container.innerHTML = table;
-
-      } catch (err) {
-        console.error("Error loading report", err);
-        container.innerHTML = "<p>Failed to load report.</p>";
-      }
-    }
-
-    function exportCSV() {
-      const table = document.getElementById("attendanceTable");
-      if (!table) return alert("No report to export.");
-      let csv = [];
-      const rows = table.querySelectorAll("tr");
-
-      rows.forEach(row => {
-        const cols = row.querySelectorAll("td, th");
-        let rowData = [];
-        cols.forEach(col => rowData.push(col.innerText));
-        csv.push(rowData.join(","));
-      });
-
-      const blob = new Blob([csv.join("\n")], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "Attendance_Report.csv";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle("dark-mode");
     }
   </script>
 </body>
