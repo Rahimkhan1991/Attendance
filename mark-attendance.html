@@ -75,6 +75,12 @@
   <div class="student-list" id="studentList"></div>
 
   <button id="submitBtn" onclick="submitAttendance()">Submit Attendance</button>
+<script>
+  const user = JSON.parse(localStorage.getItem("attendanceUser"));
+  if (!user) {
+    window.location.href = "login.html";
+  }
+</script>
 
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec'; // Replace with your Web App URL
