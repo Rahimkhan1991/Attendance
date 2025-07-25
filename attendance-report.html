@@ -157,18 +157,24 @@
 
     async function fetchReport() {
       const className = document.getElementById("classSelect").value;
-      const reportDate = document.getElementById("reportDate").value;
+      const reportDateInput = document.getElementById("reportDate").value;
       const container = document.getElementById("reportContainer");
 
-      if (!className || !reportDate) {
+      if (!className || !reportDateInput) {
         alert("Please select class and date.");
         return;
       }
 
+      const selectedDate = new Date(reportDateInput);
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const year = selectedDate.getFullYear();
+      const formattedDate = `${day}/${month}/${year}`;
+
       container.innerHTML = "<p>Loading...</p>";
 
       try {
-        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
+        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${formattedDate}`);
         const data = await res.json();
         currentData = data;
 
