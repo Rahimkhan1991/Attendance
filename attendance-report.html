@@ -1,96 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
-  <link rel="stylesheet" href="style.css">
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #f0f2f5;
       margin: 0;
-      padding: 0;
-      background-color: #f4f4f4;
+      padding: 10px;
     }
 
-    header {
-      background-color: #007BFF;
-      color: white;
-      padding: 10px 20px;
+    h2 {
       text-align: center;
+      color: #007bff;
     }
 
     .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
       padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
-    .filters {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .filters select,
-    .filters input[type="date"] {
+    select, input[type="date"], button {
+      width: 100%;
       padding: 10px;
+      margin: 10px 0;
       font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      background-color: white;
+      margin-top: 20px;
     }
 
-    th,
-    td {
-      padding: 12px;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-
-    th {
-      background-color: #007BFF;
-      color: white;
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
     }
 
     .download-btn {
-      margin-top: 20px;
-      padding: 10px 20px;
       background-color: #28a745;
       color: white;
-      border: none;
-      cursor: pointer;
+      font-weight: bold;
     }
 
-    .download-btn:hover {
-      background-color: #218838;
-    }
-
-    @media (max-width: 600px) {
-      .filters {
-        flex-direction: column;
-      }
+    .message {
+      margin-top: 20px;
+      text-align: center;
+      color: red;
     }
   </style>
 </head>
-
 <body>
-  <header>
-    <h1>Attendance Report</h1>
-  </header>
-
   <div class="container">
-    <div class="filters">
-      <select id="classDropdown"></select>
-      <input type="date" id="reportDate" />
-    </div>
+    <h2>Attendance Report</h2>
+    
+    <label for="classSelect">Select Class</label>
+    <select id="classSelect"></select>
 
+    <label for="dateInput">Select Date</label>
+    <input type="date" id="dateInput" />
+
+    <button onclick="fetchAttendance()">Show Report</button>
     <button class="download-btn" onclick="downloadCSV()">Download CSV</button>
 
-    <table id="attendanceTable">
+    <div id="message" class="message"></div>
+    <table id="reportTable" style="display:none;">
       <thead>
         <tr>
           <th>Roll No</th>
@@ -103,88 +87,98 @@
   </div>
 
   <script>
-    const user = JSON.parse(localStorage.getItem('loggedInUser'));
-    const allClasses = ["Class_1A", "Class_2A", "Class_3A", "Class_4A"];
-    const classDropdown = document.getElementById("classDropdown");
-    const reportDate = document.getElementById("reportDate");
-    const attendanceTableBody = document.querySelector("#attendanceTable tbody");
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const BASE_URL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
 
-    function populateClassDropdown() {
-      classDropdown.innerHTML = "";
-      const defaultOption = document.createElement("option");
-      defaultOption.text = "Select Class";
-      defaultOption.disabled = true;
-      defaultOption.selected = true;
-      classDropdown.appendChild(defaultOption);
+    const user = JSON.parse(localStorage.getItem('user')) || {};
+    const classSelect = document.getElementById('classSelect');
+    const dateInput = document.getElementById('dateInput');
+    const messageDiv = document.getElementById('message');
+    const reportTable = document.getElementById('reportTable');
+    const reportBody = reportTable.querySelector('tbody');
 
-      const userClass = user.role === "admin" ? allClasses : [user.className];
-      userClass.forEach(className => {
-        const option = document.createElement("option");
-        option.value = className;
-        option.text = className.replace("_", " ");
-        classDropdown.appendChild(option);
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!user || !user.role) {
+        alert("Unauthorized. Please login.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      if (user.role === 'admin') {
+        loadAllClasses();
+      } else {
+        // teacher
+        const option = document.createElement('option');
+        option.value = user.assignedClass;
+        option.textContent = user.assignedClass;
+        classSelect.appendChild(option);
+      }
+    });
+
+    function loadAllClasses() {
+      const classes = ["Class_1A", "Class_1B", "Class_2A", "Class_2B"]; // Add your actual class list here
+      classes.forEach(cls => {
+        const option = document.createElement('option');
+        option.value = cls;
+        option.textContent = cls;
+        classSelect.appendChild(option);
       });
     }
 
     function fetchAttendance() {
-      const className = classDropdown.value;
-      const date = reportDate.value;
-      if (!className || !date) {
+      messageDiv.textContent = '';
+      reportTable.style.display = 'none';
+      reportBody.innerHTML = '';
+
+      const selectedClass = classSelect.value;
+      const selectedDate = dateInput.value;
+
+      if (!selectedClass || !selectedDate) {
+        messageDiv.textContent = "Please select both class and date.";
         return;
       }
-      const dateParts = date.split("-");
-      const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-      const url = `${scriptURL}?action=getAttendance&className=${className}&date=${formattedDate}`;
 
-      fetch(url)
+      const formattedDate = selectedDate.split('-').reverse().join('/'); // Format: DD/MM/YYYY
+
+      fetch(`${BASE_URL}?action=getAttendance&className=${selectedClass}&date=${formattedDate}`)
         .then(res => res.json())
         .then(data => {
-          attendanceTableBody.innerHTML = "";
-          if (data.length === 0) {
-            alert("No attendance records found for this date and class.");
+          if (!data || data.length === 0) {
+            messageDiv.textContent = "No attendance records found.";
+            return;
           }
+
           data.forEach(row => {
-            const tr = document.createElement("tr");
+            const tr = document.createElement('tr');
             tr.innerHTML = `<td>${row.roll}</td><td>${row.name}</td><td>${row.status}</td>`;
-            attendanceTableBody.appendChild(tr);
+            reportBody.appendChild(tr);
           });
+
+          reportTable.style.display = 'table';
         })
         .catch(err => {
           console.error(err);
-          alert("Error fetching attendance.");
+          messageDiv.textContent = "Error fetching attendance.";
         });
     }
 
     function downloadCSV() {
-      let csvContent = "data:text/csv;charset=utf-8,Roll No,Name,Status\n";
-      const rows = document.querySelectorAll("#attendanceTable tbody tr");
-      rows.forEach(row => {
-        const cols = row.querySelectorAll("td");
-        const rowData = Array.from(cols).map(col => col.innerText).join(",");
-        csvContent += rowData + "\n";
-      });
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `attendance_${classDropdown.value}_${reportDate.value}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    classDropdown.addEventListener("change", fetchAttendance);
-    reportDate.addEventListener("change", fetchAttendance);
-
-    document.addEventListener("DOMContentLoaded", () => {
-      if (!user) {
-        window.location.href = "index.html";
+      if (!reportTable.style.display || reportTable.style.display === 'none') {
+        alert("No data to download.");
         return;
       }
-      populateClassDropdown();
-    });
+
+      let csv = "Roll No,Name,Status\n";
+      document.querySelectorAll("#reportTable tbody tr").forEach(row => {
+        const cols = row.querySelectorAll("td");
+        csv += `${cols[0].textContent},${cols[1].textContent},${cols[2].textContent}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = "attendance-report.csv";
+      link.click();
+    }
   </script>
 </body>
-
 </html>
