@@ -93,10 +93,7 @@
         const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
         const data = await res.json();
 
-        if (!data || data.length === 0) {
-          container.innerHTML = "<p>No attendance data found for this date.</p>";
-          return;
-        }
+       
 
         let table = `<table>
                       <tr><th>Roll</th><th>Name</th><th>Status</th></tr>`;
