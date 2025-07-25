@@ -74,7 +74,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const className = user.role === 'admin' ? prompt("Enter class name (e.g., Class_1A):") : urlParams.get("class") || user.assignedClass;
 
-    fetch(`https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=getAttendanceReport&className=${className}`)
+    fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendanceReport&className=${className}`)
       .then(res => res.json())
       .then(data => {
         const tbody = document.querySelector("#reportTable tbody");
