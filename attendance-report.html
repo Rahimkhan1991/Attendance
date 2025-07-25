@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Attendance Report</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     * {
       box-sizing: border-box;
@@ -13,47 +13,51 @@
     }
 
     body {
-      background: #f0f4f8;
+      background: #74ebd5;
       margin: 0;
       padding: 20px;
     }
 
     .container {
-      max-width: 100%;
-      background: white;
-      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 25px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     h2 {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       color: #333;
     }
 
     label {
+      display: block;
+      margin-top: 10px;
       font-weight: 600;
     }
 
     select, input[type="date"] {
-      padding: 8px;
-      margin: 8px 0;
       width: 100%;
+      padding: 10px;
+      margin-top: 5px;
       border: 1px solid #ccc;
       border-radius: 8px;
     }
 
     button {
-      padding: 10px;
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
       background-color: #4f46e5;
       color: white;
-      border: none;
-      border-radius: 8px;
-      width: 100%;
-      margin-top: 10px;
-      cursor: pointer;
       font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
     }
 
     button:hover {
@@ -64,16 +68,46 @@
       width: 100%;
       margin-top: 20px;
       border-collapse: collapse;
+      font-size: 14px;
     }
 
     th, td {
+      border: 1px solid #ddd;
       padding: 10px;
-      border: 1px solid #ccc;
       text-align: left;
     }
 
     th {
-      background-color: #f7f7f7;
+      background-color: #f5f5f5;
+    }
+
+    @media screen and (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 10px;
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 10px;
+      }
+
+      td {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 10px;
+      }
+
+      td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        color: #333;
+      }
     }
   </style>
 </head>
@@ -81,23 +115,29 @@
 <body>
   <div class="container">
     <h2>Attendance Report</h2>
-    <div>
-      <label for="classSelect">Class:</label>
-      <select id="classSelect"></select>
-      <label for="dateSelect">Date:</label>
-      <input type="date" id="dateSelect">
-      <button onclick="fetchReport()">Show Report</button>
-      <button onclick="downloadCSV()">Download CSV</button>
-    </div>
-    <table id="reportTable" style="display:none">
+    <label for="classSelect">Class:</label>
+    <select id="classSelect"></select>
+
+    <label for="dateSelect">Date:</label>
+    <input type="date" id="dateSelect" />
+
+    <button onclick="fetchReport()">Show Report</button>
+    <button onclick="downloadCSV()">Download CSV</button>
+
+    <table id="reportTable" style="display: none;">
       <thead>
-        <tr><th>Name</th><th>Roll No</th><th>Status</th></tr>
+        <tr>
+          <th>Name</th>
+          <th>Roll No</th>
+          <th>Status</th>
+        </tr>
       </thead>
       <tbody id="reportBody"></tbody>
     </table>
   </div>
 
   <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
     const user = JSON.parse(localStorage.getItem("attendanceUser"));
     if (!user) {
       window.location.href = "login.html";
@@ -106,35 +146,54 @@
     const classSelect = document.getElementById("classSelect");
     const dateSelect = document.getElementById("dateSelect");
 
-    if (user.role === "teacher") {
-      classSelect.innerHTML = `<option value="${user.assignedClass}">${user.assignedClass}</option>`;
-      classSelect.disabled = true;
-    } else {
-      // Admin - populate with available classes
-      const classes = ["Class_1A", "Class_1B", "Class_2A"]; // Replace with your real class list
-      classSelect.innerHTML = classes.map(cls => `<option value="${cls}">${cls}</option>`).join("");
-    }
+    window.onload = () => {
+      if (user.role === "teacher") {
+        classSelect.innerHTML = `<option value="${user.assignedClass}">${user.assignedClass}</option>`;
+        classSelect.disabled = true;
+      } else if (user.role === "admin") {
+        const allClasses = ["Class_1A", "Class_1B", "Class_2A", "Class_2B"]; // Add more as needed
+        classSelect.innerHTML = allClasses.map(cls => `<option value="${cls}">${cls}</option>`).join("");
+      }
+    };
 
     function fetchReport() {
       const className = classSelect.value;
-      const date = dateSelect.value;
-      if (!date) {
-        alert("Please select a date");
+      const reportDate = dateSelect.value;
+      if (!reportDate) {
+        alert("Please select a date.");
         return;
       }
-      fetch(`https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=getAttendanceReport&className=${className}&date=${date}`)
+
+      const dateParts = reportDate.split("-");
+      const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+      const url = `${scriptURL}?action=getAttendance&className=${className}&date=${formattedDate}`;
+
+      fetch(url)
         .then(res => res.json())
         .then(data => {
-          const tbody = document.getElementById("reportBody");
           const table = document.getElementById("reportTable");
+          const tbody = document.getElementById("reportBody");
           tbody.innerHTML = "";
+
+          if (!data.length) {
+            alert("No data found for this date.");
+            table.style.display = "none";
+            return;
+          }
+
           data.forEach(row => {
-            tbody.innerHTML += `<tr><td>${row.name}</td><td>${row.roll}</td><td>${row.status}</td></tr>`;
+            tbody.innerHTML += `
+              <tr>
+                <td data-label="Name">${row.name}</td>
+                <td data-label="Roll No">${row.roll}</td>
+                <td data-label="Status">${row.status}</td>
+              </tr>`;
           });
+
           table.style.display = "table";
         })
         .catch(err => {
-          alert("Failed to fetch report");
+          alert("Error fetching attendance data.");
           console.error(err);
         });
     }
@@ -142,14 +201,16 @@
     function downloadCSV() {
       const rows = [["Name", "Roll No", "Status"]];
       document.querySelectorAll("#reportBody tr").forEach(tr => {
-        const cells = [...tr.children].map(td => td.textContent);
-        rows.push(cells);
+        const cols = Array.from(tr.children).map(td => td.textContent);
+        rows.push(cols);
       });
-      const csvContent = rows.map(e => e.join(",")).join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv" });
+
+      const csv = rows.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `Attendance_${classSelect.value}_${dateSelect.value}.csv`;
+      const date = dateSelect.value || "report";
+      link.download = `Attendance_${classSelect.value}_${date}.csv`;
       link.click();
     }
   </script>
