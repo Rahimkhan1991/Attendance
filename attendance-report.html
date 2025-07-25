@@ -104,12 +104,7 @@
       window.location.href = "index.html";
     }
 
-    let userInfo = users[currentUser];
-    if (!userInfo) {
-      alert("Invalid user session.");
-      localStorage.removeItem("attendanceUser");
-      window.location.href = "index.html";
-    }
+    
 
     window.onload = () => {
       const classSelect = document.getElementById("classSelect");
