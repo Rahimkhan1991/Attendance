@@ -1,38 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Attendance App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Attendance Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f2f2f2;
-    }
-    h2 {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: #f5f7fa;
       color: #333;
     }
-    .btn {
+
+    .navbar {
+      background-color: #007bff;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .title {
+      text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+
+    label {
       display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    select, button {
       width: 100%;
-      padding: 15px;
-      margin: 10px 0;
-      font-size: 18px;
-      background: #007bff;
+      padding: 12px;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #007bff;
       color: white;
       border: none;
-      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .footer {
+      margin-top: 30px;
       text-align: center;
-      text-decoration: none;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      font-size: 0.9rem;
+      color: #999;
     }
   </style>
 </head>
 <body>
-  <h2>Attendance Dashboard</h2>
-  <a class="btn" href="view-student.html">📋 View Students</a>
-  <a class="btn" href="mark-attendance.html">✅ Mark Attendance</a>
-  <a class="btn" href="attendance-report.html">📈 Attendance Report</a> <!-- New link added -->
+
+  <div class="navbar">Attendance Dashboard</div>
+
+  <div class="container">
+    <div class="title">Welcome, <span id="userName">User</span></div>
+
+    <label for="classDropdown">Select Class:</label>
+    <select id="classDropdown">
+      <option value="Class_1A">Class 1A</option>
+      <option value="Class_1B">Class 1B</option>
+      <option value="Class_2A">Class 2A</option>
+      <option value="Class_2B">Class 2B</option>
+    </select>
+
+    <button onclick="goToAttendance()">📋 Mark Attendance</button>
+    <button onclick="goToReport()">📊 View Attendance Report</button>
+    <button onclick="logout()">🚪 Logout</button>
+
+    <div class="footer">© 2025 School Attendance App</div>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem("attendanceUser"));
+    if (!user) {
+      window.location.href = "login.html";
+    }
+
+    document.getElementById("userName").textContent = user.username;
+
+    const isAdmin = user.role === "admin";
+    const assignedClass = user.assignedClass;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const classDropdown = document.getElementById("classDropdown");
+
+      if (!isAdmin) {
+        // Show only assigned class for teachers
+        classDropdown.innerHTML = `<option value="${assignedClass}">${assignedClass}</option>`;
+        classDropdown.disabled = true;
+      }
+    });
+
+    function goToAttendance() {
+      const className = document.getElementById("classDropdown").value;
+      localStorage.setItem("selectedClass", className);
+      window.location.href = "mark-attendance.html";
+    }
+
+    function goToReport() {
+      const className = document.getElementById("classDropdown").value;
+      localStorage.setItem("selectedClass", className);
+      window.location.href = "attendance.html";
+    }
+
+    function logout() {
+      localStorage.removeItem("attendanceUser");
+      window.location.href = "login.html";
+    }
+  </script>
+
 </body>
 </html>
