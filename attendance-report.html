@@ -1,128 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Attendance Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
-      background: #f3f7fa;
+      background-color: #f4f4f4;
     }
-
     h2 {
-      color: #007bff;
+      color: #007BFF;
     }
-
-    select, input[type="date"], button {
-      padding: 10px;
-      margin: 10px 5px 20px 0;
-      font-size: 16px;
-    }
-
-    .report {
-      background: white;
-      border-radius: 8px;
+    .container {
+      background: #fff;
       padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: auto;
     }
-
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+    select, input[type="date"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 20px;
     }
-
     th, td {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
     }
-
     th {
-      background: #f0f0f0;
+      background: #007BFF;
+      color: white;
     }
-
-    .present {
-      color: green;
-      font-weight: bold;
-    }
-
-    .absent {
-      color: red;
-      font-weight: bold;
+    .back-btn {
+      background: #6c757d;
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
-  <h2>Attendance Report</h2>
+  <div class="container">
+    <h2>Attendance Report</h2>
+    <label for="classSelect">Select Class:</label>
+    <select id="classSelect">
+      <option value="">-- Select Class --</option>
+    </select>
 
-  <label for="classSelect">Class:</label>
-  <select id="classSelect">
-    <option value="">-- Select Class --</option>
-    <option value="Class_1A">Class 1A</option>
-    <option value="Class_1B">Class 1B</option>
-    <option value="Class_2A">Class 2A</option>
-    <!-- Add more classes if needed -->
-  </select>
+    <label for="reportDate">Select Date:</label>
+    <input type="date" id="reportDate">
 
-  <label for="reportDate">Date:</label>
-  <input type="date" id="reportDate" />
+    <button onclick="loadAttendanceReport()">View Report</button>
 
-  <button onclick="fetchReport()">Get Report</button>
+    <table id="reportTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Name</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="reportBody"></tbody>
+    </table>
 
-  <div class="report" id="reportContainer"></div>
+    <button class="back-btn" onclick="window.location.href='index.html'">⬅ Back to Home</button>
+  </div>
 
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
 
-    async function fetchReport() {
+    // Load class list on page load
+    window.onload = () => {
+      fetch(`${scriptURL}?action=getClassList`)
+        .then(res => res.json())
+        .then(classes => {
+          const select = document.getElementById("classSelect");
+          classes.forEach(cls => {
+            const option = document.createElement("option");
+            option.value = cls;
+            option.textContent = cls;
+            select.appendChild(option);
+          });
+        })
+        .catch(err => alert("Failed to load class list"));
+    };
+
+    function loadAttendanceReport() {
       const className = document.getElementById("classSelect").value;
       const reportDate = document.getElementById("reportDate").value;
-      const container = document.getElementById("reportContainer");
 
       if (!className || !reportDate) {
         alert("Please select both class and date.");
         return;
       }
 
-      container.innerHTML = "<p>Loading...</p>";
+      // ✅ Format date from yyyy-mm-dd to dd/mm/yyyy
+      const dateParts = reportDate.split("-");
+      const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
 
-      try {
-        const url = `${scriptURL}?action=getAttendanceReport&className=${encodeURIComponent(className)}&date=${encodeURIComponent(reportDate)}`;
-        const response = await fetch(url);
-        const data = await response.json();
+      const url = `${scriptURL}?action=getAttendance&className=${className}&date=${formattedDate}`;
 
-        if (!data || !Array.isArray(data)) {
-          container.innerHTML = "<p>No data found or invalid format.</p>";
-          return;
-        }
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById("reportBody");
+          tbody.innerHTML = "";
+          if (data.length === 0) {
+            alert("No attendance data found for selected date.");
+            document.getElementById("reportTable").style.display = "none";
+            return;
+          }
 
-        if (data.length === 0) {
-          container.innerHTML = "<p>No attendance found for this date.</p>";
-          return;
-        }
+          data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${row.roll}</td>
+              <td>${row.name}</td>
+              <td>${row.status}</td>
+            `;
+            tbody.appendChild(tr);
+          });
 
-        let table = `<table>
-                      <tr><th>Roll</th><th>Name</th><th>Status</th></tr>`;
-
-        data.forEach(student => {
-          const statusClass = student.status === 'P' ? 'present' : 'absent';
-          const statusText = student.status === 'P' ? 'Present ✅' : 'Absent ❌';
-          table += `<tr>
-                      <td>${student.Roll}</td>
-                      <td>${student.Name}</td>
-                      <td class="${statusClass}">${statusText}</td>
-                    </tr>`;
+          document.getElementById("reportTable").style.display = "table";
+        })
+        .catch(err => {
+          alert("Failed to load attendance report");
+          console.error(err);
         });
-
-        table += `</table>`;
-        container.innerHTML = table;
-      } catch (err) {
-        console.error("Error loading report:", err);
-        container.innerHTML = "<p style='color: red;'>Failed to load attendance report.</p>";
-      }
     }
   </script>
 </body>
