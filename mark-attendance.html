@@ -1,68 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Mark Attendance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #eef2f7;
+      padding: 10px;
+      background-color: #f2f2f2;
     }
 
     h2 {
-      color: #007bff;
+      color: #333;
     }
 
     select, button {
       padding: 10px;
       margin: 10px 0;
-      font-size: 16px;
+      width: 100%;
+      max-width: 300px;
     }
 
     .student-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
       margin-top: 20px;
     }
 
-    .student-item {
-      background: #fff;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      margin-bottom: 10px;
+    .student-card {
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
     }
 
-    label {
-      margin-left: 10px;
+    .student-name {
+      font-size: 16px;
+      font-weight: bold;
     }
 
-    .present {
-      accent-color: green;
+    .present-checkbox {
+      transform: scale(1.5);
+    }
+
+    #submitBtn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    #submitBtn:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
+
   <h2>Mark Attendance</h2>
 
   <label for="classSelect">Select Class:</label>
   <select id="classSelect" onchange="loadStudents()">
     <option value="">-- Select Class --</option>
     <option value="Class_1A">Class 1A</option>
-    <option value="Class_1B">Class 1B</option>
     <option value="Class_2A">Class 2A</option>
-    <!-- Add more classes -->
+    <!-- Add more classes as needed -->
   </select>
 
   <div class="student-list" id="studentList"></div>
 
-  <button onclick="submitAttendance()">Submit Attendance</button>
+  <button id="submitBtn" onclick="submitAttendance()">Submit Attendance</button>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec'; // Replace with your Web App URL
 
     async function loadStudents() {
       const className = document.getElementById("classSelect").value;
@@ -75,65 +90,56 @@
         const res = await fetch(`${scriptURL}?action=getStudents&className=${className}`);
         const students = await res.json();
 
-        if (students.length === 0) {
-          studentList.innerHTML = "<p>No students found.</p>";
-          return;
-        }
+        students.forEach((student, index) => {
+          const card = document.createElement("div");
+          card.className = "student-card";
 
-        students.forEach(student => {
-          const div = document.createElement("div");
-          div.className = "student-item";
-          div.innerHTML = `
-            <div>
-              <strong>${student.roll}</strong> - ${student.name}
-            </div>
-            <div>
-              <input type="checkbox" class="present" data-roll="${student.roll}" checked>
-              <label>Present</label>
-            </div>
+          card.innerHTML = `
+            <div class="student-name">${student.roll}. ${student.name}</div>
+            <input type="checkbox" class="present-checkbox" data-roll="${student.roll}" checked>
           `;
-          studentList.appendChild(div);
+
+          studentList.appendChild(card);
         });
       } catch (err) {
-        console.error("Error loading students", err);
+        console.error("Failed to fetch students", err);
         studentList.innerHTML = "<p>Error loading students.</p>";
       }
     }
 
     async function submitAttendance() {
       const className = document.getElementById("classSelect").value;
-      if (!className) return alert("Select a class first.");
+      if (!className) return alert("Please select a class.");
 
-      const checkboxes = document.querySelectorAll(".present");
+      const checkboxes = document.querySelectorAll(".present-checkbox");
       const attendance = [];
 
-      checkboxes.forEach(cb => {
+      checkboxes.forEach((cb, index) => {
         attendance.push({
           roll: cb.dataset.roll,
-          status: cb.checked ? "P" : "A"
+          rowIndex: index,
+          present: cb.checked
         });
       });
 
-      try {
-        const res = await fetch(scriptURL, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "markAttendance",
-            className,
-            attendance
-          }),
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
+      const today = new Date().toLocaleDateString("en-GB").split("/").join("/"); // DD/MM/YYYY
 
+      const url = `${scriptURL}?action=submitAttendance&className=${className}&date=${today}&data=${encodeURIComponent(JSON.stringify(attendance))}`;
+
+      try {
+        const res = await fetch(url);
         const result = await res.json();
-        alert(result.message || "Attendance submitted.");
+        if (result.success) {
+          alert("Attendance submitted successfully.");
+        } else {
+          alert("Submission failed: " + result.message);
+        }
       } catch (err) {
-        console.error("Submit error", err);
-        alert("Failed to submit attendance.");
+        console.error("Submit failed", err);
+        alert("Error submitting attendance.");
       }
     }
   </script>
+
 </body>
 </html>
