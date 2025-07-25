@@ -1,69 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mark Attendance</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 10px; background: #f4f4f4; }
+    .student-row {
+      display: flex; justify-content: space-between;
+      background: #fff; padding: 10px; margin: 5px 0;
+      border-radius: 5px;
+    }
+    .controls input { margin-left: 10px; }
+    button { padding: 10px 15px; margin-top: 10px; }
+  </style>
 </head>
 <body>
-  <h2>Mark Attendance</h2>
-  <select id="classSelect"></select>
+  <h2>Mark Attendance - <span id="className"></span></h2>
   <input type="date" id="attendanceDate" />
-  <ul id="studentList"></ul>
+  <div id="studentList"></div>
   <button onclick="submitAttendance()">Submit</button>
 
   <script>
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
-    const classSelect = document.getElementById("classSelect");
-    const studentList = document.getElementById("studentList");
-    const dateInput = document.getElementById("attendanceDate");
+    const className = localStorage.getItem("selectedClass");
+    document.getElementById("className").textContent = className;
 
-    const classes = ["Class_1A", "Class_2B", "Class_3C"];
-    classes.forEach(cls => {
-      const opt = document.createElement("option");
-      opt.value = cls;
-      opt.text = cls;
-      classSelect.appendChild(opt);
-    });
+    let students = [];
 
-    classSelect.addEventListener("change", loadStudents);
-
-    function loadStudents() {
-      const className = classSelect.value;
-      fetch(`${webAppUrl}?action=getStudents&className=${className}`)
-        .then(res => res.json())
-        .then(data => {
-          studentList.innerHTML = "";
-          data.forEach(s => {
-            const li = document.createElement("li");
-            li.innerHTML = `
-              <label>
-                <input type="checkbox" data-index="${s.rowIndex}" checked />
-                ${s.roll} - ${s.name}
-              </label>
-            `;
-            studentList.appendChild(li);
-          });
+    fetch(`https://script.google.com/macros/s/AKfycbw.../exec?action=getStudents&className=${className}`)
+      .then(res => res.json())
+      .then(data => {
+        students = data;
+        const container = document.getElementById("studentList");
+        data.forEach((s, i) => {
+          const row = document.createElement("div");
+          row.className = "student-row";
+          row.innerHTML = `
+            <div>${s.roll}. ${s.name}</div>
+            <div class="controls">
+              P <input type="radio" name="att-${i}" value="P" checked />
+              A <input type="radio" name="att-${i}" value="A" />
+            </div>`;
+          container.appendChild(row);
         });
-    }
+      });
 
     function submitAttendance() {
-      const className = classSelect.value;
-      const date = dateInput.value;
-      if (!date) return alert("Please select a date");
+      const date = document.getElementById("attendanceDate").value;
+      if (!date) return alert("Select a date");
 
-      const checkboxes = studentList.querySelectorAll("input[type='checkbox']");
-      const data = Array.from(checkboxes).map(cb => ({
-        rowIndex: parseInt(cb.dataset.index),
-        present: cb.checked
+      const attendance = students.map((s, i) => ({
+        roll: s.roll,
+        name: s.name,
+        rowIndex: i,
+        present: document.querySelector(`input[name="att-${i}"]:checked`).value === "P"
       }));
 
-      fetch(`${webAppUrl}?action=submitAttendance&className=${className}&date=${date}&data=${encodeURIComponent(JSON.stringify(data))}`)
+      fetch(`https://script.google.com/macros/s/AKfycbw.../exec?action=submitAttendance&className=${className}&date=${date}&data=${encodeURIComponent(JSON.stringify(attendance))}`)
         .then(res => res.json())
-        .then(result => {
-          alert(result.success ? "Attendance submitted!" : "Error");
+        .then(res => {
+          if (res.success) alert("Attendance saved!");
+          else alert("Error: " + res.message);
         });
     }
-
-    loadStudents();
   </script>
 </body>
 </html>
