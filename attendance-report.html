@@ -7,30 +7,62 @@
   <title>Attendance Report</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       font-family: 'Inter', sans-serif;
+    }
+
+    body {
       background: #f0f4f8;
       margin: 0;
       padding: 20px;
     }
 
     .container {
-      max-width: 800px;
-      margin: auto;
-      background: #ffffff;
-      padding: 30px;
+      max-width: 100%;
+      background: white;
+      padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     h2 {
       text-align: center;
-      color: #2c3e50;
       margin-bottom: 20px;
+      color: #333;
+    }
+
+    label {
+      font-weight: 600;
+    }
+
+    select, input[type="date"] {
+      padding: 8px;
+      margin: 8px 0;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      padding: 10px;
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      width: 100%;
+      margin-top: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #4338ca;
     }
 
     table {
       width: 100%;
+      margin-top: 20px;
       border-collapse: collapse;
     }
 
@@ -41,12 +73,7 @@
     }
 
     th {
-      background-color: #4f46e5;
-      color: white;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
+      background-color: #f7f7f7;
     }
   </style>
 </head>
@@ -54,50 +81,77 @@
 <body>
   <div class="container">
     <h2>Attendance Report</h2>
-    <table id="reportTable">
+    <div>
+      <label for="classSelect">Class:</label>
+      <select id="classSelect"></select>
+      <label for="dateSelect">Date:</label>
+      <input type="date" id="dateSelect">
+      <button onclick="fetchReport()">Show Report</button>
+      <button onclick="downloadCSV()">Download CSV</button>
+    </div>
+    <table id="reportTable" style="display:none">
       <thead>
-        <tr>
-          <th>Date</th>
-          <th>Roll No</th>
-          <th>Name</th>
-          <th>Status</th>
-        </tr>
+        <tr><th>Name</th><th>Roll No</th><th>Status</th></tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="reportBody"></tbody>
     </table>
   </div>
 
   <script>
     const user = JSON.parse(localStorage.getItem("attendanceUser"));
-    if (!user) window.location.href = "login.html";
+    if (!user) {
+      window.location.href = "login.html";
+    }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const className = user.role === 'admin' ? prompt("Enter class name (e.g., Class_1A):") : urlParams.get("class") || user.assignedClass;
+    const classSelect = document.getElementById("classSelect");
+    const dateSelect = document.getElementById("dateSelect");
 
-    fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendanceReport&className=${className}`)
-      .then(res => res.json())
-      .then(data => {
-        const tbody = document.querySelector("#reportTable tbody");
-        tbody.innerHTML = "";
-        if (data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4">No attendance records found.</td></tr>';
-          return;
-        }
-        data.forEach(entry => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${entry.date}</td>
-            <td>${entry.roll}</td>
-            <td>${entry.name}</td>
-            <td>${entry.status}</td>
-          `;
-          tbody.appendChild(row);
+    if (user.role === "teacher") {
+      classSelect.innerHTML = `<option value="${user.assignedClass}">${user.assignedClass}</option>`;
+      classSelect.disabled = true;
+    } else {
+      // Admin - populate with available classes
+      const classes = ["Class_1A", "Class_1B", "Class_2A"]; // Replace with your real class list
+      classSelect.innerHTML = classes.map(cls => `<option value="${cls}">${cls}</option>`).join("");
+    }
+
+    function fetchReport() {
+      const className = classSelect.value;
+      const date = dateSelect.value;
+      if (!date) {
+        alert("Please select a date");
+        return;
+      }
+      fetch(`https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=getAttendanceReport&className=${className}&date=${date}`)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById("reportBody");
+          const table = document.getElementById("reportTable");
+          tbody.innerHTML = "";
+          data.forEach(row => {
+            tbody.innerHTML += `<tr><td>${row.name}</td><td>${row.roll}</td><td>${row.status}</td></tr>`;
+          });
+          table.style.display = "table";
+        })
+        .catch(err => {
+          alert("Failed to fetch report");
+          console.error(err);
         });
-      })
-      .catch(err => {
-        console.error("Error fetching attendance report:", err);
-        alert("Failed to load attendance data.");
+    }
+
+    function downloadCSV() {
+      const rows = [["Name", "Roll No", "Status"]];
+      document.querySelectorAll("#reportBody tr").forEach(tr => {
+        const cells = [...tr.children].map(td => td.textContent);
+        rows.push(cells);
       });
+      const csvContent = rows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Attendance_${classSelect.value}_${dateSelect.value}.csv`;
+      link.click();
+    }
   </script>
 </body>
 
