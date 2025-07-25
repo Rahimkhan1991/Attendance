@@ -89,8 +89,12 @@
 
       container.innerHTML = "<p>Loading...</p>";
 
+      // Convert yyyy-MM-dd to dd/MM/yyyy
+      const dateParts = reportDate.split("-");
+      const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
       try {
-        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
+        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${formattedDate}`);
         const data = await res.json();
 
         if (!data || data.length === 0) {
