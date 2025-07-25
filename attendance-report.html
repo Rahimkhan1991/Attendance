@@ -2,73 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Attendance Report</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js" />
   <style>
-    :root {
-      --bg-color: #f3f7fa;
-      --text-color: #000;
-      --primary-color: #007bff;
-      --card-bg: #fff;
-      --present-row: #d4edda;
-      --absent-row: #f8d7da;
-    }
-
-    body.dark {
-      --bg-color: #121212;
-      --text-color: #eee;
-      --card-bg: #1e1e1e;
-    }
-
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       padding: 20px;
-      background: var(--bg-color);
-      color: var(--text-color);
-      transition: background 0.3s, color 0.3s;
+      background: #eaf4fc;
+      margin: 0;
     }
 
-    .header {
+    header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 20px;
     }
 
-    .header img {
+    header img {
       height: 50px;
     }
 
-    .btn {
-      padding: 10px 15px;
-      font-size: 14px;
-      background: var(--primary-color);
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-right: 10px;
+    header h1 {
+      font-size: 24px;
+      color: #007bff;
     }
 
-    .summary {
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-bottom: 20px;
-      background: var(--card-bg);
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    }
-
-    .report {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
 
     select, input[type="date"], button {
       padding: 10px;
-      margin: 10px 5px 20px 0;
       font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .report {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
 
     table {
@@ -84,119 +62,150 @@
     }
 
     th {
-      background: #f0f0f0;
+      background: #f0f8ff;
+      color: #333;
     }
 
-    tr.present { background-color: var(--present-row); }
-    tr.absent { background-color: var(--absent-row); }
+    .summary {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #333;
+    }
 
-    canvas {
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .back-home {
       margin-top: 20px;
-      max-width: 400px;
+    }
+
+    @media (max-width: 600px) {
+      table, th, td {
+        font-size: 14px;
+      }
+
+      header h1 {
+        font-size: 18px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="school-logo.png" alt="School Logo" />
-    <div>
-      <button class="btn" onclick="goHome()">Home</button>
-      <button class="btn" onclick="goBack()">Back</button>
-      <button class="btn" onclick="toggleDarkMode()">🌓 Theme</button>
-    </div>
-  </div>
-  <h2>Attendance Report - <span id="schoolName">SDN Bandungrejosari 3 Malang</span></h2>
-  <input type="date" id="dateInput" />
-  <button onclick="loadReport()">Load Report</button>
-  <button onclick="downloadPDF()">Download PDF</button>
+  <header>
+    <img src="logo.png" alt="School Logo" />
+    <h1>SDN Bandungrejosari 3 Malang - Attendance Report</h1>
+  </header>
 
-  <div class="summary" id="summaryBox" style="display:none">
-    <p>Total Students: <span id="totalCount"></span></p>
-    <p>Present: <span id="presentCount"></span> ✅</p>
-    <p>Absent: <span id="absentCount"></span> ❌</p>
+  <div class="controls">
+    <select id="classSelector"></select>
+    <input type="date" id="reportDate" />
+    <button onclick="loadAttendanceReport()">Load Report</button>
+    <button onclick="exportPDF()">Download PDF</button>
+    <button onclick="exportCSV()">Export CSV</button>
   </div>
 
-  <div class="report" id="reportContainer">
-    <table id="attendanceTable"></table>
-    <canvas id="attendanceChart"></canvas>
+  <div class="report" id="reportContent">
+    <h2>Attendance Details</h2>
+    <div id="summary"></div>
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Name</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <div class="btn-group back-home">
+    <button onclick="window.location.href='index.html'">🏠 Home</button>
+    <button onclick="window.history.back()">🔙 Back</button>
+  </div>
+
   <script>
-    const goHome = () => location.href = 'index.html';
-    const goBack = () => history.back();
-    const toggleDarkMode = () => document.body.classList.toggle('dark');
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("reportDate").value = today;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const today = new Date();
-      document.getElementById('dateInput').valueAsDate = today;
-      loadReport();
+    const classSelector = document.getElementById("classSelector");
+    const classes = ["Class_1A", "Class_1B", "Class_2A", "Class_2B"];
+    classes.forEach(cls => {
+      const option = document.createElement("option");
+      option.value = cls;
+      option.textContent = cls.replace("_", " ");
+      classSelector.appendChild(option);
     });
 
-    async function loadReport() {
-      const date = document.getElementById('dateInput').value;
-      const url = `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendance&date=${date}`;
+    function loadAttendanceReport() {
+      const className = classSelector.value;
+      const date = document.getElementById("reportDate").value;
+      if (!className || !date) return alert("Please select class and date.");
 
-      const res = await fetch(url);
-      const data = await res.json();
+      fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendance&className=${className}&date=${date}`)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.querySelector("#attendanceTable tbody");
+          tbody.innerHTML = "";
+          if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan='3'>No attendance data found for this date.</td></tr>`;
+            document.getElementById("summary").innerText = "";
+            return;
+          }
+          let present = 0, absent = 0;
+          data.forEach(s => {
+            const row = `<tr>
+              <td>${s.roll}</td>
+              <td>${s.name}</td>
+              <td>${s.status}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+            if (s.status === "Present") present++;
+            else absent++;
+          });
+          document.getElementById("summary").innerText = `Total: ${data.length} | Present: ${present} | Absent: ${absent}`;
+        });
+    }
 
+    function exportCSV() {
       const table = document.getElementById("attendanceTable");
-      table.innerHTML = "";
-
-      if (!data || data.length === 0) {
-        table.innerHTML = `<tr><td>No attendance data found for this date.</td></tr>`;
-        return;
-      }
-
-      let present = 0, absent = 0;
-      table.innerHTML = `<tr><th>Roll No</th><th>Name</th><th>Status</th></tr>`;
-
-      data.forEach((item) => {
-        const row = document.createElement("tr");
-        row.className = item.status === 'Present' ? 'present' : 'absent';
-        row.innerHTML = `<td>${item.roll}</td><td>${item.name}</td><td>${item.status}</td>`;
-        table.appendChild(row);
-        item.status === 'Present' ? present++ : absent++;
-      });
-
-      document.getElementById("summaryBox").style.display = 'block';
-      document.getElementById("presentCount").textContent = present;
-      document.getElementById("absentCount").textContent = absent;
-      document.getElementById("totalCount").textContent = data.length;
-
-      drawChart(present, absent);
-    }
-
-    function drawChart(present, absent) {
-      const ctx = document.getElementById("attendanceChart").getContext("2d");
-      new Chart(ctx, {
-        type: "pie",
-        data: {
-          labels: ["Present", "Absent"],
-          datasets: [{
-            data: [present, absent],
-            backgroundColor: ["#28a745", "#dc3545"]
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom' } }
+      let csv = [];
+      for (let row of table.rows) {
+        let rowData = [];
+        for (let cell of row.cells) {
+          rowData.push(cell.innerText);
         }
-      });
+        csv.push(rowData.join(","));
+      }
+      const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+      const a = document.createElement("a");
+      a.href = csvContent;
+      a.download = "AttendanceReport.csv";
+      a.click();
     }
 
-    function downloadPDF() {
-      const el = document.getElementById("reportContainer");
-      html2canvas(el).then(canvas => {
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF();
-        pdf.text("Attendance Report", 10, 10);
-        pdf.addImage(imgData, "PNG", 10, 20, 190, 0);
-        pdf.save("attendance-report.pdf");
-      });
+    function exportPDF() {
+      const printWindow = window.open("", "", "width=800,height=600");
+      const content = document.getElementById("reportContent").innerHTML;
+      const css = `<style>
+        body { font-family: Arial; padding: 20px; }
+        h2 { color: #007bff; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; border: 1px solid #ccc; }
+        th { background: #e0f3ff; }
+      </style>`;
+      printWindow.document.write(`<html><head><title>Attendance PDF</title>${css}</head><body>`);
+      printWindow.document.write(`<h2>SDN Bandungrejosari 3 Malang</h2>`);
+      printWindow.document.write(`<div>${new Date().toLocaleDateString()}</div>`);
+      printWindow.document.write(content);
+      printWindow.document.write(`</body></html>`);
+      printWindow.document.close();
+      printWindow.print();
     }
   </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
