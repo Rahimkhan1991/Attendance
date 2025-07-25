@@ -1,44 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 10px; background: #f8f8f8; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-    th, td { border: 1px solid #ccc; padding: 5px; text-align: center; }
-    th { background: #007bff; color: white; }
-    h2 { color: #007bff; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f3f7fa;
+    }
+
+    h2 {
+      color: #007bff;
+    }
+
+    select, input[type="date"], button {
+      padding: 10px;
+      margin: 10px 5px 20px 0;
+      font-size: 16px;
+    }
+
+    .report {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+
+    .present {
+      color: green;
+      font-weight: bold;
+    }
+
+    .absent {
+      color: red;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h2>Attendance Report - <span id="className"></span></h2>
-  <div id="reportContainer"></div>
+  <h2>Attendance Report</h2>
+
+  <label for="classSelect">Class:</label>
+  <select id="classSelect">
+    <option value="">-- Select Class --</option>
+    <option value="Class_1A">Class 1A</option>
+    <option value="Class_1B">Class 1B</option>
+    <option value="Class_2A">Class 2A</option>
+    <!-- Add more if needed -->
+  </select>
+
+  <label for="reportDate">Date:</label>
+  <input type="date" id="reportDate" />
+
+  <button onclick="fetchReport()">Get Report</button>
+
+  <div class="report" id="reportContainer"></div>
 
   <script>
-    const className = localStorage.getItem("selectedClass");
-    document.getElementById("className").textContent = className;
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
 
-    fetch(`https://script.google.com/macros/s/AKfycbw.../exec?action=getAttendanceReport&className=${className}`)
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById("reportContainer");
-        if (data.length === 0) return container.innerHTML = "<p>No data available</p>";
+    async function fetchReport() {
+      const className = document.getElementById("classSelect").value;
+      const reportDate = document.getElementById("reportDate").value;
+      const container = document.getElementById("reportContainer");
 
-        const dates = Object.keys(data[0].attendance);
-        let html = `<table><thead><tr><th>Roll</th><th>Name</th>`;
-        dates.forEach(date => html += `<th>${date}</th>`);
-        html += `</tr></thead><tbody>`;
+      if (!className || !reportDate) {
+        alert("Please select class and date.");
+        return;
+      }
+
+      container.innerHTML = "<p>Loading...</p>";
+
+      try {
+        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+          container.innerHTML = "<p>No attendance data found for this date.</p>";
+          return;
+        }
+
+        let table = `<table>
+                      <tr><th>Roll</th><th>Name</th><th>Status</th></tr>`;
+
         data.forEach(student => {
-          html += `<tr><td>${student.roll}</td><td>${student.name}</td>`;
-          dates.forEach(date => html += `<td>${student.attendance[date]}</td>`);
-          html += `</tr>`;
+          table += `<tr>
+                      <td>${student.roll}</td>
+                      <td>${student.name}</td>
+                      <td class="${student.status === 'P' ? 'present' : 'absent'}">
+                        ${student.status === 'P' ? 'Present ✅' : 'Absent ❌'}
+                      </td>
+                    </tr>`;
         });
-        html += `</tbody></table>`;
-        container.innerHTML = html;
-      })
-      .catch(() => alert("Failed to load attendance report."));
+
+        table += `</table>`;
+        container.innerHTML = table;
+      } catch (err) {
+        console.error("Error loading report", err);
+        container.innerHTML = "<p>Failed to load report.</p>";
+      }
+    }
   </script>
 </body>
 </html>
