@@ -1,48 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 10px; background: #f8f8f8; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { border: 1px solid #ccc; padding: 5px; text-align: center; }
+    th { background: #007bff; color: white; }
+    h2 { color: #007bff; }
+  </style>
 </head>
 <body>
-  <h2>Attendance Report</h2>
-  <select id="classSelect"></select>
+  <h2>Attendance Report - <span id="className"></span></h2>
   <div id="reportContainer"></div>
 
   <script>
-    const webAppUrl = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
-    const classSelect = document.getElementById("classSelect");
-    const reportContainer = document.getElementById("reportContainer");
+    const className = localStorage.getItem("selectedClass");
+    document.getElementById("className").textContent = className;
 
-    const classes = ["Class_1A", "Class_2B", "Class_3C"];
-    classes.forEach(cls => {
-      const opt = document.createElement("option");
-      opt.value = cls;
-      opt.text = cls;
-      classSelect.appendChild(opt);
-    });
+    fetch(`https://script.google.com/macros/s/AKfycbw.../exec?action=getAttendanceReport&className=${className}`)
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById("reportContainer");
+        if (data.length === 0) return container.innerHTML = "<p>No data available</p>";
 
-    classSelect.addEventListener("change", loadReport);
-
-    function loadReport() {
-      const className = classSelect.value;
-      fetch(`${webAppUrl}?action=getAttendanceReport&className=${className}`)
-        .then(res => res.json())
-        .then(data => {
-          reportContainer.innerHTML = "";
-          data.forEach(s => {
-            const div = document.createElement("div");
-            div.innerHTML = `<strong>${s.roll} - ${s.name}</strong><br>`;
-            for (const date in s.attendance) {
-              div.innerHTML += `${date}: ${s.attendance[date]}<br>`;
-            }
-            div.style.borderBottom = "1px solid #ccc";
-            div.style.marginBottom = "10px";
-            reportContainer.appendChild(div);
-          });
+        const dates = Object.keys(data[0].attendance);
+        let html = `<table><thead><tr><th>Roll</th><th>Name</th>`;
+        dates.forEach(date => html += `<th>${date}</th>`);
+        html += `</tr></thead><tbody>`;
+        data.forEach(student => {
+          html += `<tr><td>${student.roll}</td><td>${student.name}</td>`;
+          dates.forEach(date => html += `<td>${student.attendance[date]}</td>`);
+          html += `</tr>`;
         });
-    }
-
-    loadReport();
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      })
+      .catch(() => alert("Failed to load attendance report."));
   </script>
 </body>
 </html>
