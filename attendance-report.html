@@ -138,12 +138,12 @@
             return;
           }
 
-          data.forEach(row => {
+          data.forEach(student => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-              <td>${row.roll}</td>
-              <td>${row.name}</td>
-              <td>${row.status}</td>
+              <td>${student.roll}</td>
+              <td>${student.name}</td>
+              <td>${student.status}</td>
             `;
             tbody.appendChild(tr);
           });
