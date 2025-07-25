@@ -1,217 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance Report</title>
+  <link rel="stylesheet" href="style.css">
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f0f4f8;
       margin: 0;
-      padding: 10px;
+      padding: 0;
+      background-color: #f4f4f4;
     }
 
-    h2 {
-      color: #007bff;
+    header {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
       text-align: center;
     }
 
-    .filter-container {
+    .container {
+      padding: 20px;
+    }
+
+    .filters {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
-    .filter-container label {
-      font-weight: bold;
-    }
-
-    .filter-container select,
-    .filter-container input[type="date"] {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
+    .filters select,
+    .filters input[type="date"] {
+      padding: 10px;
       font-size: 16px;
     }
 
-    #reportTable {
+    table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
+      background-color: white;
     }
 
-    #reportTable th, #reportTable td {
+    th,
+    td {
+      padding: 12px;
       border: 1px solid #ddd;
-      padding: 10px;
       text-align: center;
     }
 
-    #reportTable th {
-      background-color: #007bff;
+    th {
+      background-color: #007BFF;
       color: white;
     }
 
-    .btn {
-      padding: 10px 15px;
-      background-color: #007bff;
+    .download-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #28a745;
       color: white;
       border: none;
-      border-radius: 8px;
-      font-size: 16px;
       cursor: pointer;
-      margin-top: 10px;
     }
 
-    .btn:hover {
-      background-color: #0056b3;
+    .download-btn:hover {
+      background-color: #218838;
     }
 
     @media (max-width: 600px) {
-      .filter-container {
-        font-size: 14px;
-      }
-
-      #reportTable th, #reportTable td {
-        padding: 8px;
+      .filters {
+        flex-direction: column;
       }
     }
   </style>
 </head>
+
 <body>
-  <h2>Attendance Report</h2>
+  <header>
+    <h1>Attendance Report</h1>
+  </header>
 
-  <div class="filter-container">
-    <label for="classSelect">Select Class:</label>
-    <select id="classSelect"></select>
+  <div class="container">
+    <div class="filters">
+      <select id="classDropdown"></select>
+      <input type="date" id="reportDate" />
+    </div>
 
-    <label for="dateInput">Select Date:</label>
-    <input type="date" id="dateInput" />
+    <button class="download-btn" onclick="downloadCSV()">Download CSV</button>
 
-    <button class="btn" onclick="fetchReport()">Show Report</button>
-    <button class="btn" onclick="downloadCSV()">Download CSV</button>
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th>Roll No</th>
+          <th>Name</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
-  <table id="reportTable">
-    <thead>
-      <tr>
-        <th>Roll No</th>
-        <th>Name</th>
-        <th>Status</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody id="reportBody">
-      <tr><td colspan="4">No data yet</td></tr>
-    </tbody>
-  </table>
-
   <script>
-    ////const userData = JSON.parse(localStorage.getItem("loggedInUser"));
-    const classSelect = document.getElementById("classSelect");
+    const user = JSON.parse(localStorage.getItem('loggedInUser'));
+    const allClasses = ["Class_1A", "Class_2A", "Class_3A", "Class_4A"];
+    const classDropdown = document.getElementById("classDropdown");
+    const reportDate = document.getElementById("reportDate");
+    const attendanceTableBody = document.querySelector("#attendanceTable tbody");
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
 
-    const classList = {
-      admin: ["Class_1A", "Class_1B", "Class_2A", "Class_2B"],
-      teacher1: ["Class_1A"],
-      teacher2: ["Class_2A"]
-    };
+    function populateClassDropdown() {
+      classDropdown.innerHTML = "";
+      const defaultOption = document.createElement("option");
+      defaultOption.text = "Select Class";
+      defaultOption.disabled = true;
+      defaultOption.selected = true;
+      classDropdown.appendChild(defaultOption);
 
-    window.onload = () => {
-      if (!userData || !userData.role) {
-        alert("Please login first");
-        window.location.href = "index.html";
-        return;
-      }
-
-      let allowedClasses = [];
-      if (userData.role === "admin") {
-        allowedClasses = classList["admin"];
-      } else {
-        allowedClasses = classList[userData.username] || [];
-      }
-
-      allowedClasses.forEach(cls => {
+      const userClass = user.role === "admin" ? allClasses : [user.className];
+      userClass.forEach(className => {
         const option = document.createElement("option");
-        option.value = cls;
-        option.textContent = cls;
-        classSelect.appendChild(option);
+        option.value = className;
+        option.text = className.replace("_", " ");
+        classDropdown.appendChild(option);
       });
+    }
 
-      if (allowedClasses.length === 1) {
-        classSelect.value = allowedClasses[0];
-        classSelect.disabled = true;
-      }
-    };
-
-    function fetchReport() {
-      const className = classSelect.value;
-      const dateInput = document.getElementById("dateInput").value;
-
-      if (!className || !dateInput) {
-        alert("Please select class and date");
+    function fetchAttendance() {
+      const className = classDropdown.value;
+      const date = reportDate.value;
+      if (!className || !date) {
         return;
       }
+      const dateParts = date.split("-");
+      const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+      const url = `${scriptURL}?action=getAttendance&className=${className}&date=${formattedDate}`;
 
-      const date = new Date(dateInput);
-      const selectedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-
-      fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendance&className=${className}&date=${selectedDate}`)
+      fetch(url)
         .then(res => res.json())
         .then(data => {
-          const tbody = document.getElementById("reportBody");
-          tbody.innerHTML = "";
-
-          if (data && data.length > 0) {
-            data.forEach(row => {
-              const tr = document.createElement("tr");
-              tr.innerHTML = `
-                <td>${row.roll}</td>
-                <td>${row.name}</td>
-                <td>${row.status}</td>
-                <td>${row.date}</td>
-              `;
-              tbody.appendChild(tr);
-            });
-          } else {
-            tbody.innerHTML = `<tr><td colspan="4">No records found</td></tr>`;
+          attendanceTableBody.innerHTML = "";
+          if (data.length === 0) {
+            alert("No attendance records found for this date and class.");
           }
+          data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${row.roll}</td><td>${row.name}</td><td>${row.status}</td>`;
+            attendanceTableBody.appendChild(tr);
+          });
         })
         .catch(err => {
-          console.error("Error:", err);
-          alert("Failed to load data");
+          console.error(err);
+          alert("Error fetching attendance.");
         });
     }
 
     function downloadCSV() {
-      const rows = document.querySelectorAll("#reportTable tr");
-      if (rows.length < 2) {
-        alert("No data to download");
-        return;
-      }
-
-      let csv = "";
+      let csvContent = "data:text/csv;charset=utf-8,Roll No,Name,Status\n";
+      const rows = document.querySelectorAll("#attendanceTable tbody tr");
       rows.forEach(row => {
-        const cols = row.querySelectorAll("th, td");
-        const rowData = [];
-        cols.forEach(col => rowData.push(`"${col.innerText}"`));
-        csv += rowData.join(",") + "\n";
+        const cols = row.querySelectorAll("td");
+        const rowData = Array.from(cols).map(col => col.innerText).join(",");
+        csvContent += rowData + "\n";
       });
 
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "AttendanceReport.csv";
-      a.click();
-      window.URL.revokeObjectURL(url);
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `attendance_${classDropdown.value}_${reportDate.value}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
+
+    classDropdown.addEventListener("change", fetchAttendance);
+    reportDate.addEventListener("change", fetchAttendance);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+      populateClassDropdown();
+    });
   </script>
 </body>
+
 </html>
