@@ -1,184 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f4f7fa;
-      padding: 20px;
-      margin: 0;
+    :root {
+      --primary: #007bff;
+      --bg: #f3f7fa;
+      --text: #000;
+      --card-bg: white;
+    }
+    [data-theme="dark"] {
+      --primary: #66ccff;
+      --bg: #121212;
+      --text: #f0f0f0;
+      --card-bg: #1e1e1e;
     }
 
-    .container {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      max-width: 500px;
-      margin: auto;
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      background: var(--bg);
+      color: var(--text);
+      transition: 0.3s ease;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .theme-toggle {
+      margin-top: 10px;
     }
 
     h2 {
-      text-align: center;
-      color: #2c3e50;
-    }
-
-    label {
-      display: block;
-      margin: 15px 0 5px;
-      font-weight: bold;
+      color: var(--primary);
+      margin-top: 10px;
     }
 
     select, input[type="date"], button {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
+      padding: 8px 12px;
+      margin: 8px 5px 10px 0;
+      font-size: 15px;
       border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .report {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      margin-top: 10px;
+      overflow-x: auto;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
     th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
     }
 
     th {
-      background: #3498db;
-      color: white;
+      background: #f0f0f0;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
 
-    .btn {
-      background-color: #2ecc71;
-      color: white;
-      border: none;
-      cursor: pointer;
-      transition: 0.3s;
+    .present {
+      color: green;
+      font-weight: bold;
     }
 
-    .btn:hover {
-      background-color: #27ae60;
-    }
-
-    .error {
+    .absent {
       color: red;
-      margin-top: -10px;
-      margin-bottom: 10px;
-      display: none;
+      font-weight: bold;
+    }
+
+    .summary {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 600px) {
+      .tools {
+        flex-direction: column;
+        align-items: stretch;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Attendance Report</h2>
-    <label for="classSelect">Select Class:</label>
-    <select id="classSelect"></select>
-    <label for="dateInput">Select Date:</label>
-    <input type="date" id="dateInput">
-    <p id="errorMsg" class="error">Please select both class and date.</p>
-    <button class="btn" onclick="fetchReport()">Get Report</button>
-    <div id="reportSection"></div>
-    <button class="btn" onclick="downloadCSV()" style="display:none;" id="downloadBtn">Download CSV</button>
+  <header>
+    <div class="logo">📘 School Attendance</div>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
+  </header>
+
+  <h2>Attendance Report</h2>
+
+  <div class="tools">
+    <label>Class:
+      <select id="classSelect">
+        <option value="">-- Select Class --</option>
+        <option value="Class_1A">Class 1A</option>
+        <option value="Class_1B">Class 1B</option>
+        <option value="Class_2A">Class 2A</option>
+      </select>
+    </label>
+
+    <label>Date:
+      <input type="date" id="reportDate" />
+    </label>
+
+    <button onclick="fetchReport()">📊 Get Report</button>
+    <button onclick="downloadCSV()">📥 Export CSV</button>
+    <button onclick="downloadPDF()">🖨️ Download PDF</button>
   </div>
 
+  <div class="report" id="reportContainer"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    const backendURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    let currentData = [];
 
-    const users = {
-      "admin": { role: "admin" },
-      "teacher1": { role: "teacher", assignedClass: "Class_1A" },
-      "teacher2": { role: "teacher", assignedClass: "Class_2B" }
-    };
-
-    
-    
-
-    window.onload = () => {
-      const classSelect = document.getElementById("classSelect");
-
-      if (userInfo.role === "admin") {
-        const allClasses = ["Class_1A", "Class_2B", "Class_3C"];
-        allClasses.forEach(cls => {
-          let opt = document.createElement("option");
-          opt.value = cls;
-          opt.textContent = cls;
-          classSelect.appendChild(opt);
-        });
-      } else {
-        let opt = document.createElement("option");
-        opt.value = userInfo.assignedClass;
-        opt.textContent = userInfo.assignedClass;
-        classSelect.appendChild(opt);
-      }
-    };
-
-    function fetchReport() {
+    async function fetchReport() {
       const className = document.getElementById("classSelect").value;
-      const dateVal = document.getElementById("dateInput").value;
-      const errorMsg = document.getElementById("errorMsg");
-      const reportSection = document.getElementById("reportSection");
+      const reportDate = document.getElementById("reportDate").value;
+      const container = document.getElementById("reportContainer");
 
-      if (!className || !dateVal) {
-        errorMsg.style.display = "block";
+      if (!className || !reportDate) {
+        alert("Please select class and date.");
         return;
-      } else {
-        errorMsg.style.display = "none";
       }
 
-      const [yyyy, mm, dd] = dateVal.split("-");
-      const formattedDate = `${dd}/${mm}/${yyyy}`;
+      container.innerHTML = "<p>Loading...</p>";
 
-      fetch(`${backendURL}?action=getAttendance&className=${className}&date=${formattedDate}`)
-        .then(res => res.json())
-        .then(data => {
-          if (!data || data.length === 0) {
-            reportSection.innerHTML = "<p>No attendance records found.</p>";
-            document.getElementById("downloadBtn").style.display = "none";
-            return;
-          }
+      try {
+        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
+        const data = await res.json();
+        currentData = data;
 
-          let html = "<table><tr><th>Roll No</th><th>Name</th><th>Status</th></tr>";
-          data.forEach(row => {
-            html += `<tr><td>${row.roll}</td><td>${row.name}</td><td>${row.status}</td></tr>`;
-          });
-          html += "</table>";
+        if (!data || data.length === 0) {
+          container.innerHTML = "<p>No attendance data found for this date.</p>";
+          return;
+        }
 
-          reportSection.innerHTML = html;
-          document.getElementById("downloadBtn").style.display = "block";
-        })
-        .catch(() => {
-          reportSection.innerHTML = "<p>Error fetching report. Please try again.</p>";
+        let presentCount = 0;
+        let absentCount = 0;
+
+        let table = `<table>
+                      <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
+
+        data.forEach(student => {
+          const isPresent = student.status === 'P';
+          if (isPresent) presentCount++; else absentCount++;
+
+          table += `<tr>
+                      <td>${student.roll}</td>
+                      <td>${student.name}</td>
+                      <td class="${isPresent ? 'present' : 'absent'}">
+                        ${isPresent ? 'Present ✅' : 'Absent ❌'}
+                      </td>
+                    </tr>`;
         });
+
+        table += `</tbody></table>`;
+        table += `<div class="summary">✅ Present: ${presentCount} | ❌ Absent: ${absentCount}</div>`;
+        container.innerHTML = table;
+
+      } catch (err) {
+        console.error("Error loading report", err);
+        container.innerHTML = "<p>Failed to load report.</p>";
+      }
     }
 
     function downloadCSV() {
-      const table = document.querySelector("table");
-      if (!table) return;
+      if (!currentData.length) return alert("No data to export.");
+      const rows = [["Roll", "Name", "Status"]];
+      currentData.forEach(s => rows.push([s.roll, s.name, s.status === "P" ? "Present" : "Absent"]));
 
-      let csv = "";
-      const rows = table.querySelectorAll("tr");
-      rows.forEach(row => {
-        const cols = row.querySelectorAll("td, th");
-        let rowData = [];
-        cols.forEach(col => rowData.push(`"${col.textContent}"`));
-        csv += rowData.join(",") + "\n";
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const link = document.createElement("a");
+      link.setAttribute("href", csvContent);
+      link.setAttribute("download", "Attendance_Report.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function downloadPDF() {
+      if (!currentData.length) return alert("No data to export.");
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(14);
+      doc.text("Attendance Report", 14, 16);
+
+      const headers = [["Roll", "Name", "Status"]];
+      const body = currentData.map(s => [s.roll, s.name, s.status === "P" ? "Present" : "Absent"]);
+
+      doc.autoTable({
+        startY: 20,
+        head: headers,
+        body: body,
       });
 
-      const blob = new Blob([csv], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "attendance_report.csv";
-      link.click();
+      doc.save("Attendance_Report.pdf");
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.dataset.theme = html.dataset.theme === "dark" ? "" : "dark";
     }
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </body>
 </html>
