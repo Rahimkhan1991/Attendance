@@ -1,127 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance Report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f3f7fa;
+      background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      background: white;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
 
     h2 {
-      color: #007bff;
-    }
-
-    select, input[type="date"], button {
-      padding: 10px;
-      margin: 10px 5px 20px 0;
-      font-size: 16px;
-    }
-
-    .report {
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      color: #2c3e50;
+      margin-bottom: 20px;
+      text-align: center;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 20px;
     }
 
     th, td {
-      padding: 10px;
+      padding: 12px;
+      text-align: center;
       border-bottom: 1px solid #ddd;
-      text-align: left;
     }
 
     th {
-      background: #f0f0f0;
+      background-color: #4f46e5;
+      color: white;
     }
 
-    .present {
-      color: green;
-      font-weight: bold;
-    }
-
-    .absent {
-      color: red;
-      font-weight: bold;
+    .back-btn {
+      margin-top: 20px;
+      background-color: #4f46e5;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: block;
+      margin-left: auto;
     }
   </style>
 </head>
+
 <body>
-  <h2>Attendance Report</h2>
-
-  <label for="classSelect">Class:</label>
-  <select id="classSelect">
-    <option value="">-- Select Class --</option>
-    <option value="Class_1A">Class 1A</option>
-    <option value="Class_1B">Class 1B</option>
-    <option value="Class_2A">Class 2A</option>
-    <!-- Add more if needed -->
-  </select>
-
-  <label for="reportDate">Date:</label>
-  <input type="date" id="reportDate" />
-
-  <button onclick="fetchReport()">Get Report</button>
-
-  <div class="report" id="reportContainer"></div>
+  <div class="container">
+    <h2>Attendance Report</h2>
+    <table id="reportTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Student Name</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Attendance data will be inserted here -->
+      </tbody>
+    </table>
+    <button class="back-btn" onclick="goBack()">Back</button>
+  </div>
 
   <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
-
-    async function fetchReport() {
-      const className = document.getElementById("classSelect").value;
-      const reportDate = document.getElementById("reportDate").value;
-      const container = document.getElementById("reportContainer");
-
-      if (!className || !reportDate) {
-        alert("Please select class and date.");
-        return;
-      }
-
-      container.innerHTML = "<p>Loading...</p>";
-
-      // Convert yyyy-MM-dd to dd/MM/yyyy
-      const dateParts = reportDate.split("-");
-      const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-
-      try {
-        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${formattedDate}`);
-        const data = await res.json();
-
-        if (!data || data.length === 0) {
-          container.innerHTML = "<p>No attendance data found for this date.</p>";
-          return;
-        }
-
-        let table = `<table>
-                      <tr><th>Roll</th><th>Name</th><th>Status</th></tr>`;
-
-        data.forEach(student => {
-          table += `<tr>
-                      <td>${student.roll}</td>
-                      <td>${student.name}</td>
-                      <td class="${student.status === 'P' ? 'present' : 'absent'}">
-                        ${student.status === 'P' ? 'Present ✅' : 'Absent ❌'}
-                      </td>
-                    </tr>`;
-        });
-
-        table += `</table>`;
-        container.innerHTML = table;
-      } catch (err) {
-        console.error("Error loading report", err);
-        container.innerHTML = "<p>Failed to load report.</p>";
-      }
+    const user = JSON.parse(localStorage.getItem("attendanceUser"));
+    if (!user) {
+      window.location.href = "login.html";
     }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const className = user.role === 'admin' ? null : urlParams.get("class") || user.assignedClass;
+
+    function goBack() {
+      window.location.href = "index.html";
+    }
+
+    function fetchAttendanceData() {
+      let url = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=getAttendance';
+      if (className) {
+        url += '&className=' + encodeURIComponent(className);
+      }
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.querySelector("#reportTable tbody");
+          tbody.innerHTML = "";
+          data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${row.date}</td>
+              <td>${row.name}</td>
+              <td>${row.status}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => {
+          console.error("Failed to load attendance report", err);
+        });
+    }
+
+    fetchAttendanceData();
   </script>
 </body>
+
 </html>
