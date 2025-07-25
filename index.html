@@ -1,97 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
       font-family: 'Inter', sans-serif;
-      background: #f5f7fa;
-      color: #333;
     }
 
-    .navbar {
-      background-color: #007bff;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.25rem;
-      font-weight: 600;
+    body {
+      background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
     }
 
     .container {
-      max-width: 500px;
-      margin: 40px auto;
       background: white;
       padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
     }
 
-    .title {
-      text-align: center;
-      font-size: 1.5rem;
+    h1 {
+      color: #2c3e50;
       margin-bottom: 20px;
     }
 
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-    }
-
-    select, button {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      background-color: #007bff;
+    .button {
+      background-color: #4f46e5;
       color: white;
+      padding: 12px 20px;
       border: none;
+      border-radius: 10px;
+      margin: 10px 0;
       cursor: pointer;
-      transition: 0.3s ease;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+      width: 100%;
     }
 
-    button:hover {
-      background-color: #0056b3;
+    .button:hover {
+      background-color: #4338ca;
     }
 
-    .footer {
-      margin-top: 30px;
-      text-align: center;
-      font-size: 0.9rem;
-      color: #999;
+    .logout {
+      background: none;
+      color: #e74c3c;
+      font-size: 14px;
+      margin-top: 20px;
+      cursor: pointer;
+      border: none;
     }
   </style>
 </head>
+
 <body>
-
-  <div class="navbar">Attendance Dashboard</div>
-
   <div class="container">
-    <div class="title">Welcome, <span id="userName">User</span></div>
-
-    <label for="classDropdown">Select Class:</label>
-    <select id="classDropdown">
-      <option value="Class_1A">Class 1A</option>
-      <option value="Class_1B">Class 1B</option>
-      <option value="Class_2A">Class 2A</option>
-      <option value="Class_2B">Class 2B</option>
-    </select>
-
-    <button onclick="goToAttendance()">📋 Mark Attendance</button>
-    <button onclick="goToReport()">📊 View Attendance Report</button>
-    <button onclick="logout()">🚪 Logout</button>
-
-    <div class="footer">© 2025 School Attendance App</div>
+    <h1>Welcome to Attendance System</h1>
+    <button class="button" onclick="navigateTo('mark-attendance.html')">Mark Attendance</button>
+    <button class="button" onclick="navigateTo('view-student.html')">View Students</button>
+    <button class="button" onclick="navigateToReport()">Attendance Report</button>
+    <button class="logout" onclick="logout()">Logout</button>
   </div>
 
   <script>
@@ -100,31 +81,18 @@
       window.location.href = "login.html";
     }
 
-    document.getElementById("userName").textContent = user.username;
-
-    const isAdmin = user.role === "admin";
-    const assignedClass = user.assignedClass;
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const classDropdown = document.getElementById("classDropdown");
-
-      if (!isAdmin) {
-        // Show only assigned class for teachers
-        classDropdown.innerHTML = `<option value="${assignedClass}">${assignedClass}</option>`;
-        classDropdown.disabled = true;
-      }
-    });
-
-    function goToAttendance() {
-      const className = document.getElementById("classDropdown").value;
-      localStorage.setItem("selectedClass", className);
-      window.location.href = "mark-attendance.html";
+    function navigateTo(page) {
+      window.location.href = page;
     }
 
-    function goToReport() {
-      const className = document.getElementById("classDropdown").value;
-      localStorage.setItem("selectedClass", className);
-      window.location.href = "attendance-report.html";
+    function navigateToReport() {
+      if (user.role === 'admin') {
+        window.location.href = 'attendance-report.html';
+      } else if (user.role === 'teacher') {
+        window.location.href = 'attendance-report.html?class=' + encodeURIComponent(user.assignedClass);
+      } else {
+        alert("You don't have permission to access reports.");
+      }
     }
 
     function logout() {
@@ -132,6 +100,6 @@
       window.location.href = "login.html";
     }
   </script>
-
 </body>
+
 </html>
