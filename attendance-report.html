@@ -138,29 +138,37 @@
 </div>
 
 </div>
+  </header>
+  <body>
+  <div class="container">
+    <h2>📊 Attendance Report</h2>
 
     
-    <h2>Attendance Report</h2>
-  </header>
-
-  <div class="filters">
+    <label for="classSelect">Select Class:</label>
     <select id="classSelect">
       <option value="">-- Select Class --</option>
       <option value="Class_1A">Class 1A</option>
-      <option value="Class_1B">Class 1B</option>
       <option value="Class_2A">Class 2A</option>
+      <option value="Class_3B">Class 3B</option>
     </select>
 
-    <input type="date" id="reportDate" />
-    <button onclick="fetchReport()">Get Report</button>
-    <button onclick="exportCSV()">Download CSV</button>
-    <button onclick="window.print()">Download PDF</button>
-    <button onclick="toggleTheme()" class="toggle-theme">🌙 Dark Mode</button>
-  </div>
+    <label for="dateInput">Select Date:</label>
+    <input type="date" id="dateInput" />
 
-  <div class="report" id="reportContainer">
-    <!-- Report will be injected here -->
+    <label for="monthInput">Select Month:</label>
+    <input type="month" id="monthInput" />
+
+    <div class="btn-group">
+      <button onclick="loadAttendanceReport()">Daily Report</button>
+      <button onclick="loadMonthlyAttendanceReport()">Monthly Report</button>
+      <button onclick="downloadCSV()">Download CSV</button>
+      <button onclick="downloadPDF()">Download PDF</button>
+    </div>
+
+    <div id="reportContainer"></div>
   </div>
+</body>
+
 
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
