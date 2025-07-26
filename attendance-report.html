@@ -37,7 +37,7 @@
       margin: 20px 0;
     }
 
-    select, input[type="date"], button {
+    select, input[type="date"], input[type="month"], button {
       padding: 10px;
       font-size: 16px;
       border: 1px solid #ccc;
@@ -72,7 +72,7 @@
     th, td {
       padding: 12px;
       border-bottom: 1px solid #ddd;
-      text-align: left;
+      text-align: center;
     }
 
     th {
@@ -139,6 +139,7 @@
   <h2>Attendance Report</h2>
 
   <div class="filters">
+    <label for="classSelect">Select Class:</label>
     <select id="classSelect">
       <option value="">-- Select Class --</option>
       <option value="Class_1A">Class 1A</option>
@@ -146,10 +147,14 @@
       <option value="Class_2A">Class 2A</option>
     </select>
 
+    <label for="reportDate">Select Date:</label>
     <input type="date" id="reportDate" />
     <button onclick="fetchReport()">Get Report</button>
+
+    <label for="monthInput">Select Month:</label>
     <input type="month" id="monthInput">
     <button onclick="fetchMonthlyReport()">Monthly Report</button>
+
     <button onclick="exportCSV()">Download CSV</button>
     <button onclick="window.print()">Download PDF</button>
     <button onclick="toggleTheme()" class="toggle-theme">🌙 Dark Mode</button>
@@ -165,28 +170,18 @@
     async function fetchReport() {
       const className = document.getElementById("classSelect").value;
       const rawDate = document.getElementById("reportDate").value;
+      if (!className || !rawDate) return alert("Please select class and date.");
+
       const [year, month, day] = rawDate.split("-");
       const reportDate = `${day}/${month}/${year}`;
       const container = document.getElementById("reportContainer");
-
-      if (!className || !reportDate) {
-        alert("Please select class and date.");
-        return;
-      }
-
       container.innerHTML = "<p>Loading...</p>";
 
       try {
         const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
         const data = await res.json();
-
-        if (!data || data.length === 0) {
-          container.innerHTML = "<p>No attendance data found for this date.</p>";
-          return;
-        }
-
-        renderReport(data);
-
+        if (!data || data.length === 0) return container.innerHTML = "<p>No attendance data found for this date.</p>";
+        renderSingleDayReport(data);
       } catch (err) {
         console.error("Error loading report", err);
         container.innerHTML = "<p>Failed to load report.</p>";
@@ -196,37 +191,26 @@
     async function fetchMonthlyReport() {
       const className = document.getElementById("classSelect").value;
       const monthValue = document.getElementById("monthInput").value; // yyyy-mm
+      if (!className || !monthValue) return alert("Please select class and month.");
+
       const [year, month] = monthValue.split("-");
       const container = document.getElementById("reportContainer");
-
-      if (!className || !month) {
-        alert("Please select class and month.");
-        return;
-      }
-
       container.innerHTML = "<p>Loading monthly report...</p>";
 
       try {
-        const res = await fetch(`${scriptURL}?action=getMonthlyAttendanceReport&className=${className}&month=${month}&year=${year}`);
+        const res = await fetch(`${scriptURL}?action=getMonthlyAttendanceReport&className=${className}&month=${month}`);
         const data = await res.json();
-
-        if (!data || data.length === 0) {
-          container.innerHTML = "<p>No attendance data found for this month.</p>";
-          return;
-        }
-
-        renderReport(data);
-
+        if (!data || data.length === 0) return container.innerHTML = "<p>No attendance data found for this month.</p>";
+        renderMonthlyReport(data);
       } catch (err) {
         console.error("Error loading monthly report", err);
         container.innerHTML = "<p>Failed to load monthly report.</p>";
       }
     }
 
-    function renderReport(data) {
+    function renderSingleDayReport(data) {
       const container = document.getElementById("reportContainer");
-      let presentCount = 0;
-      let absentCount = 0;
+      let presentCount = 0, absentCount = 0;
 
       let table = `<table id="attendanceTable">
                     <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
@@ -245,6 +229,40 @@
 
       table += `</tbody></table>
                 <div class="summary">✅ Total Present: ${presentCount} | ❌ Total Absent: ${absentCount}</div>`;
+      container.innerHTML = table;
+    }
+
+    function renderMonthlyReport(data) {
+      const container = document.getElementById("reportContainer");
+      const allDates = new Set();
+
+      data.forEach(student => {
+        Object.keys(student.attendance || {}).forEach(date => allDates.add(date));
+      });
+
+      const sortedDates = Array.from(allDates).sort((a, b) => {
+        const [da, ma, ya] = a.split("/");
+        const [db, mb, yb] = b.split("/");
+        return new Date(`${ya}-${ma}-${da}`) - new Date(`${yb}-${mb}-${db}`);
+      });
+
+      let table = `<table id="attendanceTable">
+                    <thead><tr><th>Roll No.</th><th>Name</th>`;
+      sortedDates.forEach(date => table += `<th>${date}</th>`);
+      table += `</tr></thead><tbody>`;
+
+      data.forEach(student => {
+        table += `<tr><td>${student.roll}</td><td>${student.name}</td>`;
+        sortedDates.forEach(date => {
+          const status = student.attendance?.[date] || "-";
+          const statusClass = status === 'P' ? 'present' : status === 'A' ? 'absent' : '';
+          const displayStatus = status === 'P' ? '✅' : status === 'A' ? '❌' : '-';
+          table += `<td class="${statusClass}">${displayStatus}</td>`;
+        });
+        table += `</tr>`;
+      });
+
+      table += `</tbody></table>`;
       container.innerHTML = table;
     }
 
