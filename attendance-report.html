@@ -108,7 +108,12 @@
       .filters {
         flex-direction: column;
       }
-    }
+    } 
+    .warning {
+  color: orange;
+  font-weight: bold;
+}
+
   </style>
 </head>
 <body>
@@ -165,28 +170,54 @@
     }
 
     function renderSingleDayReport(data) {
-      const container = document.getElementById("reportContainer");
-      let presentCount = 0, absentCount = 0;
+  const container = document.getElementById("reportContainer");
+  let hadir = 0, izin = 0, sakit = 0, alfa = 0;
 
-      let table = `<table id="attendanceTable">
-                    <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
+  let table = `<table id="attendanceTable">
+                <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
 
-      data.forEach(student => {
-        const status = student.status === 'P' ? 'Present ✅' : 'Absent ❌';
-        const statusClass = student.status === 'P' ? 'present' : 'absent';
-        if (student.status === 'P') presentCount++; else absentCount++;
+  data.forEach(student => {
+    let statusLabel = "", statusClass = "";
 
-        table += `<tr>
-                    <td>${student.roll}</td>
-                    <td>${student.name}</td>
-                    <td class="${statusClass}">${status}</td>
-                  </tr>`;
-      });
-
-      table += `</tbody></table>
-                <div class="summary">✅ Total Present: ${presentCount} | ❌ Total Absent: ${absentCount}</div>`;
-      container.innerHTML = table;
+    switch (student.status) {
+      case "Hadir":
+        statusLabel = "✅ Hadir";
+        statusClass = "present";
+        hadir++;
+        break;
+      case "Izin":
+        statusLabel = "🟡 Izin";
+        statusClass = "warning";
+        izin++;
+        break;
+      case "Sakit":
+        statusLabel = "🔴 Sakit";
+        statusClass = "absent";
+        sakit++;
+        break;
+      case "Alfa":
+      default:
+        statusLabel = "❌ Absen";
+        statusClass = "absent";
+        alfa++;
+        break;
     }
+
+    table += `<tr>
+                <td>${student.roll}</td>
+                <td>${student.name}</td>
+                <td class="${statusClass}">${statusLabel}</td>
+              </tr>`;
+  });
+
+  table += `</tbody></table>
+            <div class="summary">
+              ✅ Hadir: ${hadir} | 🟡 Izin: ${izin} | 🔴 Sakit: ${sakit} | ❌ Alfa: ${alfa}
+            </div>`;
+
+  container.innerHTML = table;
+}
+
 
     function exportCSV() {
       const table = document.getElementById("attendanceTable");
