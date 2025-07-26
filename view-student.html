@@ -13,7 +13,7 @@
     }
 
     header {
-      background-color: #5dc864;
+      background-color: #007bff;
       color: white;
       padding: 15px 20px;
       display: flex;
@@ -53,12 +53,12 @@
       font-weight: bold;
     }
 
-    select, input[type="text"] {
+    select {
       width: 100%;
       padding: 10px;
       margin: 10px 0 20px;
       font-size: 16px;
-      border: linear-gradient(to right, #7fd6c6, #9fa6c5);
+      border: 1px solid #ccc;
       border-radius: 8px;
       outline: none;
     }
@@ -69,7 +69,7 @@
     }
 
     .student-card {
-      background: rgb(119, 224, 219);
+      background: white;
       display: flex;
       align-items: center;
       padding: 12px;
@@ -109,7 +109,6 @@
       font-style: italic;
     }
 
-    /* Mobile Friendly */
     @media (max-width: 600px) {
       header h2 {
         font-size: 18px;
@@ -127,7 +126,6 @@
       }
     }
 
-    /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 8px;
     }
@@ -157,17 +155,17 @@
     <select id="classSelect">
       <option disabled selected>Loading classes...</option>
     </select>
+
+    <ul id="studentList"></ul>
   </div>
 
   <script>
     const webAppUrl = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
     const classSelect = document.getElementById("classSelect");
     const studentList = document.getElementById("studentList");
-    const searchInput = document.getElementById("searchInput");
 
     const classes = ["Class_1A", "Class_2A", "Class_3C"];
 
-    // Load classes
     function loadClasses() {
       classSelect.innerHTML = "";
       const defaultOpt = document.createElement("option");
@@ -188,14 +186,6 @@
 
     classSelect.addEventListener("change", () => {
       loadStudents(classSelect.value);
-    });
-
-    searchInput.addEventListener("input", () => {
-      const searchTerm = searchInput.value.toLowerCase();
-      const filtered = allStudents.filter(s =>
-        s.name.toLowerCase().includes(searchTerm) || s.roll.toLowerCase().includes(searchTerm)
-      );
-      renderStudents(filtered);
     });
 
     function loadStudents(className) {
@@ -234,10 +224,6 @@
         li.appendChild(details);
         studentList.appendChild(li);
       });
-
-      if (data.length === 0) {
-        studentList.innerHTML = "<li class='no-students'>No matching students.</li>";
-      }
     }
 
     loadClasses();
