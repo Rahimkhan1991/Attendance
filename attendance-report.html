@@ -4,186 +4,246 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
-  <link rel="icon" href="logo.png" type="image/png">
   <style>
+    :root {
+      --primary: #007bff;
+      --bg: #f3f7fa;
+      --text: #000;
+      --card-bg: white;
+    }
+    [data-theme="dark"] {
+      --primary: #66ccff;
+      --bg: #121212;
+      --text: #f0f0f0;
+      --card-bg: #1e1e1e;
+    }
+
     body {
       font-family: Arial, sans-serif;
       padding: 10px;
-      background: #f3f7fa;
-      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      transition: 0.3s ease;
     }
+
     header {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      background: #007bff;
-      color: white;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 15px;
+      flex-wrap: wrap;
     }
-    header img {
-      height: 40px;
-      margin-right: 15px;
-    }
-    h2 {
-      margin: 0;
+
+    .logo {
       font-size: 20px;
+      font-weight: bold;
+      color: var(--primary);
     }
+
+    .theme-toggle {
+      margin-top: 10px;
+    }
+
+    h2 {
+      color: var(--primary);
+      margin-top: 10px;
+    }
+
     select, input[type="date"], button {
-      padding: 10px;
-      margin: 10px 5px 20px 0;
-      font-size: 16px;
-      border-radius: 6px;
+      padding: 8px 12px;
+      margin: 8px 5px 10px 0;
+      font-size: 15px;
+      border-radius: 5px;
       border: 1px solid #ccc;
     }
-    .nav-buttons {
-      margin-bottom: 10px;
-    }
-    .nav-buttons button {
-      background: #28a745;
+
+    button {
+      background: var(--primary);
       color: white;
       border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
-      margin-right: 10px;
+      cursor: pointer;
     }
+
+    .tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
     .report {
-      background: white;
+      background: var(--card-bg);
       border-radius: 8px;
-      padding: 20px;
+      padding: 15px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      margin-top: 10px;
+      overflow-x: auto;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
+
     th, td {
       padding: 10px;
       border-bottom: 1px solid #ddd;
       text-align: left;
     }
+
     th {
       background: #f0f0f0;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
-    canvas {
-      margin-top: 20px;
+
+    .present {
+      color: green;
+      font-weight: bold;
     }
+
+    .absent {
+      color: red;
+      font-weight: bold;
+    }
+
+    .summary {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
     @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      th, td {
-        padding: 8px;
-        text-align: right;
-      }
-      th::before, td::before {
-        float: left;
-        font-weight: bold;
-        content: attr(data-label);
+      .tools {
+        flex-direction: column;
+        align-items: stretch;
       }
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="School Logo">
-    <h2>My School Name - Attendance Report</h2>
+    <div class="logo">📘 School Attendance</div>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
   </header>
 
-  <div class="nav-buttons">
-    <button onclick="window.location.href='index.html'">🏠 Home</button>
-    <button onclick="history.back()">🔙 Back</button>
+  <h2>Attendance Report</h2>
+
+  <div class="tools">
+    <label>Class:
+      <select id="classSelect">
+        <option value="">-- Select Class --</option>
+        <option value="Class_1A">Class 1A</option>
+        <option value="Class_1B">Class 1B</option>
+        <option value="Class_2A">Class 2A</option>
+      </select>
+    </label>
+
+    <label>Date:
+      <input type="date" id="reportDate" />
+    </label>
+
+    <button onclick="fetchReport()">📊 Get Report</button>
+    <button onclick="downloadCSV()">📥 Export CSV</button>
+    <button onclick="downloadPDF()">🖨️ Download PDF</button>
   </div>
 
-  <label for="classSelect">Select Class:</label>
-  <select id="classSelect"></select>
+  <div class="report" id="reportContainer"></div>
 
-  <label for="reportDate">Select Date:</label>
-  <input type="date" id="reportDate" />
-  <button onclick="loadAttendanceReport()">📄 Load Report</button>
-  <button onclick="exportPDF()">📥 Export PDF</button>
-
-  <div class="report" id="report"></div>
-  <canvas id="summaryChart"></canvas>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    const classSelect = document.getElementById("classSelect");
-    const reportDate = document.getElementById("reportDate");
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    let currentData = [];
 
-    window.onload = function () {
-      const today = new Date().toISOString().split("T")[0];
-      reportDate.value = today;
-      fetchClassList();
-    };
+    async function fetchReport() {
+      const className = document.getElementById("classSelect").value;
+      const reportDate = document.getElementById("reportDate").value;
+      const container = document.getElementById("reportContainer");
 
-    function fetchClassList() {
-      fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=getClassList")
-        .then(res => res.json())
-        .then(data => {
-          data.forEach(cls => {
-            const option = document.createElement("option");
-            option.value = cls;
-            option.textContent = cls;
-            classSelect.appendChild(option);
-          });
-        });
-    }
+      if (!className || !reportDate) {
+        alert("Please select class and date.");
+        return;
+      }
 
-    function loadAttendanceReport() {
-      const className = classSelect.value;
-      const date = reportDate.value;
-      fetch(`https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=getAttendance&className=${className}&date=${date}`)
-        .then(res => res.json())
-        .then(data => {
-          if (!Array.isArray(data) || data.length === 0) {
-            document.getElementById("report").innerHTML = "<p>No attendance data found for this date.</p>";
-            return;
-          }
-          let presentCount = 0;
-          let absentCount = 0;
-          const table = [`<table><tr><th>Name</th><th>Status</th></tr>`];
-          data.forEach(row => {
-            const status = row.status || "Absent";
-            if (status.toLowerCase() === "present") presentCount++;
-            else absentCount++;
-            table.push(`<tr><td>${row.name}</td><td>${status}</td></tr>`);
-          });
-          table.push("</table>");
-          document.getElementById("report").innerHTML =
-            `<p>Total: ${data.length}, ✅ Present: ${presentCount}, ❌ Absent: ${absentCount}</p>` + table.join("");
-          drawChart(presentCount, absentCount);
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById("report").innerHTML = "<p>Error loading attendance data.</p>";
-        });
-    }
+      container.innerHTML = "<p>Loading...</p>";
 
-    function drawChart(present, absent) {
-      const ctx = document.getElementById("summaryChart").getContext("2d");
-      new Chart(ctx, {
-        type: "pie",
-        data: {
-          labels: ["Present", "Absent"],
-          datasets: [{
-            data: [present, absent],
-            backgroundColor: ["#28a745", "#dc3545"]
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: "bottom" }
-          }
+      try {
+        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
+        const data = await res.json();
+        currentData = data;
+
+        if (!data || data.length === 0) {
+          container.innerHTML = "<p>No attendance data found for this date.</p>";
+          return;
         }
-      });
+
+        let presentCount = 0;
+        let absentCount = 0;
+
+        let table = `<table>
+                      <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
+
+        data.forEach(student => {
+          const isPresent = student.status === 'P';
+          if (isPresent) presentCount++; else absentCount++;
+
+          table += `<tr>
+                      <td>${student.roll}</td>
+                      <td>${student.name}</td>
+                      <td class="${isPresent ? 'present' : 'absent'}">
+                        ${isPresent ? 'Present ✅' : 'Absent ❌'}
+                      </td>
+                    </tr>`;
+        });
+
+        table += `</tbody></table>`;
+        table += `<div class="summary">✅ Present: ${presentCount} | ❌ Absent: ${absentCount}</div>`;
+        container.innerHTML = table;
+
+      } catch (err) {
+        console.error("Error loading report", err);
+        container.innerHTML = "<p>Failed to load report.</p>";
+      }
     }
 
-    function exportPDF() {
-      window.print();
+    function downloadCSV() {
+      if (!currentData.length) return alert("No data to export.");
+      const rows = [["Roll", "Name", "Status"]];
+      currentData.forEach(s => rows.push([s.roll, s.name, s.status === "P" ? "Present" : "Absent"]));
+
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const link = document.createElement("a");
+      link.setAttribute("href", csvContent);
+      link.setAttribute("download", "Attendance_Report.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function downloadPDF() {
+      if (!currentData.length) return alert("No data to export.");
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(14);
+      doc.text("Attendance Report", 14, 16);
+
+      const headers = [["Roll", "Name", "Status"]];
+      const body = currentData.map(s => [s.roll, s.name, s.status === "P" ? "Present" : "Absent"]);
+
+      doc.autoTable({
+        startY: 20,
+        head: headers,
+        body: body,
+      });
+
+      doc.save("Attendance_Report.pdf");
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.dataset.theme = html.dataset.theme === "dark" ? "" : "dark";
     }
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </body>
 </html>
