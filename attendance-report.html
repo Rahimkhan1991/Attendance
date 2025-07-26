@@ -2,214 +2,187 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
+  <link rel="icon" href="logo.png" type="image/png">
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      padding: 20px;
-      background: #eaf4fc;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      background: #f3f7fa;
       margin: 0;
     }
-
     header {
       display: flex;
       align-items: center;
-      gap: 15px;
-      margin-bottom: 20px;
+      background: #007bff;
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 15px;
     }
-
     header img {
-      height: 50px;
+      height: 40px;
+      margin-right: 15px;
     }
-
-    header h1 {
-      font-size: 24px;
-      color: #007bff;
+    h2 {
+      margin: 0;
+      font-size: 20px;
     }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
     select, input[type="date"], button {
       padding: 10px;
+      margin: 10px 5px 20px 0;
       font-size: 16px;
-      border: 1px solid #ccc;
       border-radius: 6px;
+      border: 1px solid #ccc;
     }
-
+    .nav-buttons {
+      margin-bottom: 10px;
+    }
+    .nav-buttons button {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      margin-right: 10px;
+    }
     .report {
-      background: #fff;
+      background: white;
       border-radius: 8px;
       padding: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
-
     th, td {
       padding: 10px;
       border-bottom: 1px solid #ddd;
       text-align: left;
     }
-
     th {
-      background: #f0f8ff;
-      color: #333;
+      background: #f0f0f0;
     }
-
-    .summary {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #333;
-    }
-
-    .btn-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .back-home {
+    canvas {
       margin-top: 20px;
     }
-
     @media (max-width: 600px) {
-      table, th, td {
-        font-size: 14px;
+      table, thead, tbody, th, td, tr {
+        display: block;
       }
-
-      header h1 {
-        font-size: 18px;
+      th, td {
+        padding: 8px;
+        text-align: right;
+      }
+      th::before, td::before {
+        float: left;
+        font-weight: bold;
+        content: attr(data-label);
       }
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="School Logo" />
-    <h1>SDN Bandungrejosari 3 Malang - Attendance Report</h1>
+    <img src="logo.png" alt="School Logo">
+    <h2>My School Name - Attendance Report</h2>
   </header>
 
-  <div class="controls">
-    <select id="classSelector"></select>
-    <input type="date" id="reportDate" />
-    <button onclick="loadAttendanceReport()">Load Report</button>
-    <button onclick="exportPDF()">Download PDF</button>
-    <button onclick="exportCSV()">Export CSV</button>
-  </div>
-
-  <div class="report" id="reportContent">
-    <h2>Attendance Details</h2>
-    <div id="summary"></div>
-    <table id="attendanceTable">
-      <thead>
-        <tr>
-          <th>Roll No</th>
-          <th>Name</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <div class="btn-group back-home">
+  <div class="nav-buttons">
     <button onclick="window.location.href='index.html'">🏠 Home</button>
-    <button onclick="window.history.back()">🔙 Back</button>
+    <button onclick="history.back()">🔙 Back</button>
   </div>
 
+  <label for="classSelect">Select Class:</label>
+  <select id="classSelect"></select>
+
+  <label for="reportDate">Select Date:</label>
+  <input type="date" id="reportDate" />
+  <button onclick="loadAttendanceReport()">📄 Load Report</button>
+  <button onclick="exportPDF()">📥 Export PDF</button>
+
+  <div class="report" id="report"></div>
+  <canvas id="summaryChart"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const today = new Date().toISOString().split("T")[0];
-    document.getElementById("reportDate").value = today;
+    const classSelect = document.getElementById("classSelect");
+    const reportDate = document.getElementById("reportDate");
 
-    const classSelector = document.getElementById("classSelector");
-    const classes = ["Class_1A", "Class_1B", "Class_2A", "Class_2B"];
-    classes.forEach(cls => {
-      const option = document.createElement("option");
-      option.value = cls;
-      option.textContent = cls.replace("_", " ");
-      classSelector.appendChild(option);
-    });
+    window.onload = function () {
+      const today = new Date().toISOString().split("T")[0];
+      reportDate.value = today;
+      fetchClassList();
+    };
 
-    function loadAttendanceReport() {
-      const className = classSelector.value;
-      const date = document.getElementById("reportDate").value;
-      if (!className || !date) return alert("Please select class and date.");
-
-      fetch(`https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendance&className=${className}&date=${date}`)
+    function fetchClassList() {
+      fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=getClassList")
         .then(res => res.json())
         .then(data => {
-          const tbody = document.querySelector("#attendanceTable tbody");
-          tbody.innerHTML = "";
-          if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan='3'>No attendance data found for this date.</td></tr>`;
-            document.getElementById("summary").innerText = "";
-            return;
-          }
-          let present = 0, absent = 0;
-          if (!Array.isArray(data)) {
-  alert("Invalid response from server:\n" + (data.message || JSON.stringify(data)));
-  return;
-}
-
-          data.forEach(s => {
-            const row = `<tr>
-              <td>${s.roll}</td>
-              <td>${s.name}</td>
-              <td>${s.status}</td>
-            </tr>`;
-            tbody.innerHTML += row;
-            if (s.status === "Present") present++;
-            else absent++;
+          data.forEach(cls => {
+            const option = document.createElement("option");
+            option.value = cls;
+            option.textContent = cls;
+            classSelect.appendChild(option);
           });
-          document.getElementById("summary").innerText = `Total: ${data.length} | Present: ${present} | Absent: ${absent}`;
         });
     }
 
-    function exportCSV() {
-      const table = document.getElementById("attendanceTable");
-      let csv = [];
-      for (let row of table.rows) {
-        let rowData = [];
-        for (let cell of row.cells) {
-          rowData.push(cell.innerText);
+    function loadAttendanceReport() {
+      const className = classSelect.value;
+      const date = reportDate.value;
+      fetch(`https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=getAttendance&className=${className}&date=${date}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!Array.isArray(data) || data.length === 0) {
+            document.getElementById("report").innerHTML = "<p>No attendance data found for this date.</p>";
+            return;
+          }
+          let presentCount = 0;
+          let absentCount = 0;
+          const table = [`<table><tr><th>Name</th><th>Status</th></tr>`];
+          data.forEach(row => {
+            const status = row.status || "Absent";
+            if (status.toLowerCase() === "present") presentCount++;
+            else absentCount++;
+            table.push(`<tr><td>${row.name}</td><td>${status}</td></tr>`);
+          });
+          table.push("</table>");
+          document.getElementById("report").innerHTML =
+            `<p>Total: ${data.length}, ✅ Present: ${presentCount}, ❌ Absent: ${absentCount}</p>` + table.join("");
+          drawChart(presentCount, absentCount);
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById("report").innerHTML = "<p>Error loading attendance data.</p>";
+        });
+    }
+
+    function drawChart(present, absent) {
+      const ctx = document.getElementById("summaryChart").getContext("2d");
+      new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: ["Present", "Absent"],
+          datasets: [{
+            data: [present, absent],
+            backgroundColor: ["#28a745", "#dc3545"]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "bottom" }
+          }
         }
-        csv.push(rowData.join(","));
-      }
-      const csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
-      const a = document.createElement("a");
-      a.href = csvContent;
-      a.download = "AttendanceReport.csv";
-      a.click();
+      });
     }
 
     function exportPDF() {
-      const printWindow = window.open("", "", "width=800,height=600");
-      const content = document.getElementById("reportContent").innerHTML;
-      const css = `<style>
-        body { font-family: Arial; padding: 20px; }
-        h2 { color: #007bff; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 8px; border: 1px solid #ccc; }
-        th { background: #e0f3ff; }
-      </style>`;
-      printWindow.document.write(`<html><head><title>Attendance PDF</title>${css}</head><body>`);
-      printWindow.document.write(`<h2>SDN Bandungrejosari 3 Malang</h2>`);
-      printWindow.document.write(`<div>${new Date().toLocaleDateString()}</div>`);
-      printWindow.document.write(content);
-      printWindow.document.write(`</body></html>`);
-      printWindow.document.close();
-      printWindow.print();
+      window.print();
     }
   </script>
 </body>
