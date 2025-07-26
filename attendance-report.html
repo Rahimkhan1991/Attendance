@@ -130,7 +130,7 @@
 
     async function loadClasses() {
       const res = await fetch(
-        "https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getClassList"
+        "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getClassList"
       );
       const data = await res.json();
       const select = document.getElementById("classSelect");
@@ -149,7 +149,7 @@
         if (!date) return alert("Please select a date.");
         const formatted = new Date(date).toLocaleDateString("en-GB").split("/").join("-");
         const res = await fetch(
-          `https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getAttendanceReport&className=${className}&date=${formatted}`
+          `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendanceReport&className=${className}&date=${formatted}`
         );
         const data = await res.json();
         showTable([formatted], data);
@@ -158,19 +158,19 @@
         if (!month) return alert("Please select a month.");
         const [year, mon] = month.split("-");
         const sheet = await fetch(
-          `https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getStudents&className=${className}`
+          `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getStudents&className=${className}`
         );
         const students = await sheet.json();
 
         const datesRes = await fetch(
-          `https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getMonthDates&className=${className}&year=${year}&month=${mon}`
+          `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getMonthDates&className=${className}&year=${year}&month=${mon}`
         );
         const datesData = await datesRes.json(); // Should return array of available date headers
         const attendance = [];
 
         for (let date of datesData) {
           const res = await fetch(
-            `https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getAttendanceReport&className=${className}&date=${date}`
+            `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendanceReport&className=${className}&date=${date}`
           );
           const report = await res.json();
           attendance.push({ date, data: report });
