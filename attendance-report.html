@@ -131,44 +131,33 @@
   </style>
 </head>
 <body>
-
   <div style="text-align: center; margin-top: 20px;">
-  <img src="image/schoolimage.jpg" alt="School Logo" style="max-height: 120px; border-radius: 10px;" />
-  <h1 style="font-size: 24px; color: #007bff;">SDN Bandungrejosari 3 Malang</h1>
-</div>
+    <img src="image/schoolimage.jpg" alt="School Logo" style="max-height: 120px; border-radius: 10px;" />
+    <h1 style="font-size: 24px; color: #007bff;">SDN Bandungrejosari 3 Malang</h1>
+  </div>
 
-</div>
-  </header>
-  <body>
-  <div class="container">
-    <h2>📊 Attendance Report</h2>
+  <h2>Attendance Report</h2>
 
-    
-    <label for="classSelect">Select Class:</label>
+  <div class="filters">
     <select id="classSelect">
       <option value="">-- Select Class --</option>
       <option value="Class_1A">Class 1A</option>
+      <option value="Class_1B">Class 1B</option>
       <option value="Class_2A">Class 2A</option>
-      <option value="Class_3B">Class 3B</option>
     </select>
 
-    <label for="dateInput">Select Date:</label>
-    <input type="date" id="dateInput" />
-
-    <label for="monthInput">Select Month:</label>
-    <input type="month" id="monthInput" />
-
-    <div class="btn-group">
-      <button onclick="loadAttendanceReport()">Daily Report</button>
-      <button onclick="loadMonthlyAttendanceReport()">Monthly Report</button>
-      <button onclick="downloadCSV()">Download CSV</button>
-      <button onclick="downloadPDF()">Download PDF</button>
-    </div>
-
-    <div id="reportContainer"></div>
+    <input type="date" id="reportDate" />
+    <button onclick="fetchReport()">Get Report</button>
+    <input type="month" id="monthInput">
+    <button onclick="fetchMonthlyReport()">Monthly Report</button>
+    <button onclick="exportCSV()">Download CSV</button>
+    <button onclick="window.print()">Download PDF</button>
+    <button onclick="toggleTheme()" class="toggle-theme">🌙 Dark Mode</button>
   </div>
-</body>
 
+  <div class="report" id="reportContainer">
+    <!-- Report will be injected here -->
+  </div>
 
   <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
@@ -196,32 +185,67 @@
           return;
         }
 
-        let presentCount = 0;
-        let absentCount = 0;
-
-        let table = `<table id="attendanceTable">
-                      <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
-
-        data.forEach(student => {
-          const status = student.status === 'P' ? 'Present ✅' : 'Absent ❌';
-          const statusClass = student.status === 'P' ? 'present' : 'absent';
-          if (student.status === 'P') presentCount++; else absentCount++;
-
-          table += `<tr>
-                      <td>${student.roll}</td>
-                      <td>${student.name}</td>
-                      <td class="${statusClass}">${status}</td>
-                    </tr>`;
-        });
-
-        table += `</tbody></table>
-                  <div class="summary">✅ Total Present: ${presentCount} | ❌ Total Absent: ${absentCount}</div>`;
-        container.innerHTML = table;
+        renderReport(data);
 
       } catch (err) {
         console.error("Error loading report", err);
         container.innerHTML = "<p>Failed to load report.</p>";
       }
+    }
+
+    async function fetchMonthlyReport() {
+      const className = document.getElementById("classSelect").value;
+      const monthValue = document.getElementById("monthInput").value; // yyyy-mm
+      const [year, month] = monthValue.split("-");
+      const container = document.getElementById("reportContainer");
+
+      if (!className || !month) {
+        alert("Please select class and month.");
+        return;
+      }
+
+      container.innerHTML = "<p>Loading monthly report...</p>";
+
+      try {
+        const res = await fetch(`${scriptURL}?action=getMonthlyAttendanceReport&className=${className}&month=${month}&year=${year}`);
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+          container.innerHTML = "<p>No attendance data found for this month.</p>";
+          return;
+        }
+
+        renderReport(data);
+
+      } catch (err) {
+        console.error("Error loading monthly report", err);
+        container.innerHTML = "<p>Failed to load monthly report.</p>";
+      }
+    }
+
+    function renderReport(data) {
+      const container = document.getElementById("reportContainer");
+      let presentCount = 0;
+      let absentCount = 0;
+
+      let table = `<table id="attendanceTable">
+                    <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
+
+      data.forEach(student => {
+        const status = student.status === 'P' ? 'Present ✅' : 'Absent ❌';
+        const statusClass = student.status === 'P' ? 'present' : 'absent';
+        if (student.status === 'P') presentCount++; else absentCount++;
+
+        table += `<tr>
+                    <td>${student.roll}</td>
+                    <td>${student.name}</td>
+                    <td class="${statusClass}">${status}</td>
+                  </tr>`;
+      });
+
+      table += `</tbody></table>
+                <div class="summary">✅ Total Present: ${presentCount} | ❌ Total Absent: ${absentCount}</div>`;
+      container.innerHTML = table;
     }
 
     function exportCSV() {
