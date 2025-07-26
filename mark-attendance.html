@@ -142,15 +142,24 @@ body {
         const res = await fetch(`${scriptURL}?action=getStudents&className=${className}`);
         const students = await res.json();
 
-        students.forEach((student, index) => {
-          const card = document.createElement("div");
-          card.className = "student-card";
-          card.innerHTML = `
-            <div class="student-name">${student.roll}. ${student.name}</div>
-            <input type="checkbox" class="present-checkbox" data-roll="${student.roll}" checked>
-          `;
-          studentList.appendChild(card);
-        });
+        <!-- Inside your existing loadStudents() function, REPLACE THIS PART ONLY -->
+
+students.forEach((student, index) => {
+  const card = document.createElement("div");
+  card.className = "student-card";
+  card.innerHTML = `
+    <div class="student-name">${student.roll}. ${student.name}</div>
+    <div>
+      <label><input type="radio" name="status-${index}" value="Hadir" checked> ✅</label>
+      <label><input type="radio" name="status-${index}" value="Izin"> 🟡</label>
+      <label><input type="radio" name="status-${index}" value="Sakit"> 🔴</label>
+      <label><input type="radio" name="status-${index}" value="Alfa"> ❌</label>
+    </div>
+    <input type="hidden" data-roll="${student.roll}">
+  `;
+  studentList.appendChild(card);
+});
+
       } catch (err) {
         console.error("Failed to fetch students", err);
         studentList.innerHTML = "<p>Error loading students.</p>";
@@ -158,37 +167,41 @@ body {
     }
 
     async function submitAttendance() {
-      const className = document.getElementById("classSelect").value;
-      if (!className) return alert("Please select a class.");
+  const className = document.getElementById("classSelect").value;
+  if (!className) return alert("Please select a class.");
 
-      const checkboxes = document.querySelectorAll(".present-checkbox");
-      const attendance = [];
+  const cards = document.querySelectorAll(".student-card");
+  const attendance = [];
 
-      checkboxes.forEach((cb, index) => {
-        attendance.push({
-          roll: cb.dataset.roll,
-          rowIndex: index,
-          present: cb.checked
-        });
-      });
+  cards.forEach((card, index) => {
+    const roll = card.querySelector('input[type="hidden"]').dataset.roll;
+    const selectedStatus = card.querySelector(`input[name="status-${index}"]:checked`).value;
 
-      const dateStr = formattedDate.split("/").join("/"); // already formatted
+    attendance.push({
+      roll,
+      rowIndex: index,
+      status: selectedStatus
+    });
+  });
 
-      const url = `${scriptURL}?action=submitAttendance&className=${className}&date=${dateStr}&data=${encodeURIComponent(JSON.stringify(attendance))}`;
+  const dateStr = formattedDate.split("/").join("/");
 
-      try {
-        const res = await fetch(url);
-        const result = await res.json();
-        if (result.success) {
-          alert("✅ Attendance submitted successfully.");
-        } else {
-          alert("❌ Submission failed: " + result.message);
-        }
-      } catch (err) {
-        console.error("Submit failed", err);
-        alert("⚠️ Error submitting attendance.");
-      }
+  const url = `${scriptURL}?action=submitAttendance&className=${className}&date=${dateStr}&data=${encodeURIComponent(JSON.stringify(attendance))}`;
+
+  try {
+    const res = await fetch(url);
+    const result = await res.json();
+    if (result.success) {
+      alert("✅ Attendance submitted successfully.");
+    } else {
+      alert("❌ Submission failed: " + result.message);
     }
+  } catch (err) {
+    console.error("Submit failed", err);
+    alert("⚠️ Error submitting attendance.");
+  }
+}
+
   </script>
 
 </body>
