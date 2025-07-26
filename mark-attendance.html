@@ -214,7 +214,13 @@
         });
       });
 
-      const today = new Date().toLocaleDateString("en-GB").split("/").join("/");
+      let selectedDate = document.getElementById("attendanceDate").value;
+if (!selectedDate) {
+  selectedDate = new Date().toISOString().split("T")[0];
+}
+const [year, month, day] = selectedDate.split("-");
+const today = `${day}/${month}/${year}`;
+
 
       const url = `${scriptURL}?action=submitAttendance&className=${className}&date=${today}&data=${encodeURIComponent(JSON.stringify(attendance))}`;
 
