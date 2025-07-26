@@ -161,7 +161,9 @@
 
     async function fetchReport() {
       const className = document.getElementById("classSelect").value;
-      const reportDate = document.getElementById("reportDate").value;
+      const rawDate = document.getElementById("reportDate").value;
+      const [year, month, day] = rawDate.split("-");
+      const reportDate = `${day}/${month}/${year}`;
       const container = document.getElementById("reportContainer");
 
       if (!className || !reportDate) {
