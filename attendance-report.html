@@ -37,7 +37,7 @@
       margin: 20px 0;
     }
 
-    select, input[type="date"], input[type="month"], button {
+    select, input[type="date"], button {
       padding: 10px;
       font-size: 16px;
       border: 1px solid #ccc;
@@ -104,25 +104,6 @@
       flex-wrap: wrap;
     }
 
-    .dark-mode {
-      background: #1f1f1f;
-      color: #eee;
-    }
-
-    .dark-mode .report {
-      background: #2a2a2a;
-    }
-
-    .dark-mode table, .dark-mode th {
-      background: #333;
-      color: #eee;
-    }
-
-    .toggle-theme {
-      background: #333;
-      color: white;
-    }
-
     @media screen and (max-width: 600px) {
       .filters {
         flex-direction: column;
@@ -151,13 +132,8 @@
     <input type="date" id="reportDate" />
     <button onclick="fetchReport()">Get Report</button>
 
-    <label for="monthInput">Select Month:</label>
-    <input type="month" id="monthInput">
-    <button onclick="fetchMonthlyReport()">Monthly Report</button>
-
     <button onclick="exportCSV()">Download CSV</button>
     <button onclick="window.print()">Download PDF</button>
-    <button onclick="toggleTheme()" class="toggle-theme">🌙 Dark Mode</button>
   </div>
 
   <div class="report" id="reportContainer">
@@ -188,26 +164,6 @@
       }
     }
 
-    async function fetchMonthlyReport() {
-      const className = document.getElementById("classSelect").value;
-      const monthValue = document.getElementById("monthInput").value; // yyyy-mm
-      if (!className || !monthValue) return alert("Please select class and month.");
-
-      const [year, month] = monthValue.split("-");
-      const container = document.getElementById("reportContainer");
-      container.innerHTML = "<p>Loading monthly report...</p>";
-
-      try {
-        const res = await fetch(`${scriptURL}?action=getMonthlyAttendanceReport&className=${className}&month=${month}`);
-        const data = await res.json();
-        if (!data || data.length === 0) return container.innerHTML = "<p>No attendance data found for this month.</p>";
-        renderMonthlyReport(data);
-      } catch (err) {
-        console.error("Error loading monthly report", err);
-        container.innerHTML = "<p>Failed to load monthly report.</p>";
-      }
-    }
-
     function renderSingleDayReport(data) {
       const container = document.getElementById("reportContainer");
       let presentCount = 0, absentCount = 0;
@@ -232,40 +188,6 @@
       container.innerHTML = table;
     }
 
-    function renderMonthlyReport(data) {
-      const container = document.getElementById("reportContainer");
-      const allDates = new Set();
-
-      data.forEach(student => {
-        Object.keys(student.attendance || {}).forEach(date => allDates.add(date));
-      });
-
-      const sortedDates = Array.from(allDates).sort((a, b) => {
-        const [da, ma, ya] = a.split("/");
-        const [db, mb, yb] = b.split("/");
-        return new Date(`${ya}-${ma}-${da}`) - new Date(`${yb}-${mb}-${db}`);
-      });
-
-      let table = `<table id="attendanceTable">
-                    <thead><tr><th>Roll No.</th><th>Name</th>`;
-      sortedDates.forEach(date => table += `<th>${date}</th>`);
-      table += `</tr></thead><tbody>`;
-
-      data.forEach(student => {
-        table += `<tr><td>${student.roll}</td><td>${student.name}</td>`;
-        sortedDates.forEach(date => {
-          const status = student.attendance?.[date] || "-";
-          const statusClass = status === 'P' ? 'present' : status === 'A' ? 'absent' : '';
-          const displayStatus = status === 'P' ? '✅' : status === 'A' ? '❌' : '-';
-          table += `<td class="${statusClass}">${displayStatus}</td>`;
-        });
-        table += `</tr>`;
-      });
-
-      table += `</tbody></table>`;
-      container.innerHTML = table;
-    }
-
     function exportCSV() {
       const table = document.getElementById("attendanceTable");
       if (!table) return alert("No report to export.");
@@ -286,10 +208,6 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle("dark-mode");
     }
   </script>
 </body>
