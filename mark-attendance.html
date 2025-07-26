@@ -99,6 +99,15 @@ body {
         align-self: flex-end;
       }
     }
+
+.status-select {
+  font-size: 15px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #888;
+  min-width: 140px;
+}
+
   </style>
 </head>
 <body>
@@ -149,16 +158,16 @@ students.forEach((student, index) => {
   card.className = "student-card";
   card.innerHTML = `
     <div class="student-name">${student.roll}. ${student.name}</div>
-    <div>
-      <label><input type="radio" name="status-${index}" value="Hadir" checked> ✅</label>
-      <label><input type="radio" name="status-${index}" value="Izin"> 🟡</label>
-      <label><input type="radio" name="status-${index}" value="Sakit"> 🔴</label>
-      <label><input type="radio" name="status-${index}" value="Alfa"> ❌</label>
-    </div>
-    <input type="hidden" data-roll="${student.roll}">
+    <select name="status-${index}" class="status-select" data-roll="${student.roll}">
+      <option value="Hadir" selected>✅ Hadir</option>
+      <option value="Izin">🟡 Izin</option>
+      <option value="Sakit">🔴 Sakit</option>
+      <option value="Alfa">❌ Absen</option>
+    </select>
   `;
   studentList.appendChild(card);
 });
+
 
       } catch (err) {
         console.error("Failed to fetch students", err);
@@ -170,17 +179,14 @@ students.forEach((student, index) => {
   const className = document.getElementById("classSelect").value;
   if (!className) return alert("Please select a class.");
 
-  const cards = document.querySelectorAll(".student-card");
+  const selects = document.querySelectorAll(".status-select");
   const attendance = [];
 
-  cards.forEach((card, index) => {
-    const roll = card.querySelector('input[type="hidden"]').dataset.roll;
-    const selectedStatus = card.querySelector(`input[name="status-${index}"]:checked`).value;
-
+  selects.forEach((sel, index) => {
     attendance.push({
-      roll,
+      roll: sel.dataset.roll,
       rowIndex: index,
-      status: selectedStatus
+      status: sel.value
     });
   });
 
@@ -201,6 +207,7 @@ students.forEach((student, index) => {
     alert("⚠️ Error submitting attendance.");
   }
 }
+
 
   </script>
 
