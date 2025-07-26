@@ -1,291 +1,219 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Attendance Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
       padding: 20px;
-      background: #f3f7fa;
-      color: #333;
       margin: 0;
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
+    h2 {
+      text-align: center;
+      color: #0f172a;
     }
 
-    header img {
-      height: 50px;
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
-    header h2 {
-      color: #007bff;
-      font-size: 24px;
-      margin: 10px 0;
-    }
-
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 20px 0;
-    }
-
-    select, input[type="date"], button {
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+    label, select, input {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
     }
 
     button {
-      background: #007bff;
+      background: #2563eb;
       color: white;
-      cursor: pointer;
+      padding: 10px;
+      width: 100%;
       border: none;
-    }
-
-    button:hover {
-      background: #0056b3;
-    }
-
-    .report {
-      background: white;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow-x: auto;
+      border-radius: 5px;
+      font-size: 16px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 20px;
     }
 
     th, td {
-      padding: 12px;
-      border-bottom: 1px solid #ddd;
+      padding: 8px;
+      border: 1px solid #ccc;
       text-align: center;
     }
 
-    th {
-      background: #f0f0f0;
-      position: sticky;
-      top: 0;
-      z-index: 1;
+    .hidden {
+      display: none;
     }
 
-    .present {
-      color: green;
-      font-weight: bold;
-    }
-
-    .absent {
-      color: red;
-      font-weight: bold;
-    }
-
-    .summary {
-      margin-top: 15px;
-      font-weight: bold;
-    }
-
-    .actions {
-      margin-top: 10px;
+    .report-options {
       display: flex;
       gap: 10px;
-      flex-wrap: wrap;
+      margin-bottom: 15px;
     }
 
-    @media screen and (max-width: 600px) {
-      .filters {
-        flex-direction: column;
-      }
-    } 
-    .warning {
-  color: orange;
-  font-weight: bold;
-}
+    .report-options button {
+      flex: 1;
+      background: #e2e8f0;
+      color: #1e293b;
+    }
 
+    .report-options button.active {
+      background: #2563eb;
+      color: white;
+    }
   </style>
 </head>
 <body>
-  <div style="text-align: center; margin-top: 20px;">
-    <img src="image/schoolimage.jpg" alt="School Logo" style="max-height: 120px; border-radius: 10px;" />
-    <h1 style="font-size: 24px; color: #007bff;">SDN Bandungrejosari 3 Malang</h1>
-  </div>
+  <div class="container">
+    <h2>Attendance Report</h2>
 
-  <h2>Attendance Report</h2>
+    <div class="report-options">
+      <button id="dailyBtn" class="active">Daily Report</button>
+      <button id="monthlyBtn">Monthly Report</button>
+    </div>
 
-  <div class="filters">
-    <label for="classSelect">Select Class:</label>
-    <select id="classSelect">
-      <option value="">-- Select Class --</option>
-      <option value="Class_1A">Class 1A</option>
-      <option value="Class_1B">Class 1B</option>
-      <option value="Class_2A">Class 2A</option>
-    </select>
+    <label for="classSelect">Select Class</label>
+    <select id="classSelect"></select>
 
-    <label for="reportDate">Select Date:</label>
-    <input type="date" id="reportDate" />
+    <div id="dailyFields">
+      <label for="date">Select Date</label>
+      <input type="date" id="date" />
+    </div>
+
+    <div id="monthlyFields" class="hidden">
+      <label for="month">Select Month</label>
+      <input type="month" id="month" />
+    </div>
+
     <button onclick="fetchReport()">Get Report</button>
-     <label for="fromDate">From:</label>
-     <input type="date" id="fromDate" />
-  
-        <label for="toDate">To:</label>
-        <input type="date" id="toDate" />
 
-        <button onclick="filterAttendance()">Filter</button>
-
-<div id="attendanceTable"></div>
-
-    <button onclick="exportCSV()">Download CSV</button>
-    <button onclick="window.print()">Download PDF</button>
-  </div>
-
-  <div class="report" id="reportContainer">
-    <!-- Report will be injected here -->
+    <div id="reportSection"></div>
   </div>
 
   <script>
-    async function filterAttendance() {
-  const className = document.getElementById("classSelect").value;
-  const fromDate = document.getElementById("fromDate").value;
-  const toDate = document.getElementById("toDate").value;
+    let reportType = "daily";
 
-  if (!fromDate || !toDate) {
-    alert("Please select both From and To dates.");
-    return;
-  }
-
-  const response = await fetch(`https://script.google.com/macros/s/YOUR_DEPLOYED_URL/exec?action=getAttendanceReport&className=${className}&fromDate=${fromDate}&toDate=${toDate}`);
-  const result = await response.json();
-
-  if (result.success) {
-    displayAttendanceTable(result.data, result.dates);
-  } else {
-    alert("Error fetching data.");
-  }
-}
-
-function displayAttendanceTable(data, dates) {
-  let html = '<table border="1"><tr><th>Name</th><th>Roll No</th>';
-  dates.forEach(d => html += `<th>${d}</th>`);
-  html += '</tr>';
-
-  data.forEach(student => {
-    html += `<tr><td>${student.name}</td><td>${student.rollNumber}</td>`;
-    dates.forEach(d => {
-      html += `<td>${student.attendance[d] || '-'}</td>`;
+    document.getElementById("dailyBtn").addEventListener("click", () => {
+      reportType = "daily";
+      document.getElementById("dailyFields").classList.remove("hidden");
+      document.getElementById("monthlyFields").classList.add("hidden");
+      toggleButtons("dailyBtn");
     });
-    html += '</tr>';
-  });
 
-  html += '</table>';
-  document.getElementById("attendanceTable").innerHTML = html;
-}
+    document.getElementById("monthlyBtn").addEventListener("click", () => {
+      reportType = "monthly";
+      document.getElementById("dailyFields").classList.add("hidden");
+      document.getElementById("monthlyFields").classList.remove("hidden");
+      toggleButtons("monthlyBtn");
+    });
 
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    function toggleButtons(activeId) {
+      document.querySelectorAll('.report-options button').forEach(btn => {
+        btn.classList.remove("active");
+      });
+      document.getElementById(activeId).classList.add("active");
+    }
+
+    async function loadClasses() {
+      const res = await fetch(
+        "https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getClassList"
+      );
+      const data = await res.json();
+      const select = document.getElementById("classSelect");
+      data.forEach(cls => {
+        const option = document.createElement("option");
+        option.value = cls;
+        option.textContent = cls;
+        select.appendChild(option);
+      });
+    }
 
     async function fetchReport() {
       const className = document.getElementById("classSelect").value;
-      const rawDate = document.getElementById("reportDate").value;
-      if (!className || !rawDate) return alert("Please select class and date.");
-
-      const [year, month, day] = rawDate.split("-");
-      const reportDate = `${day}/${month}/${year}`;
-      const container = document.getElementById("reportContainer");
-      container.innerHTML = "<p>Loading...</p>";
-
-      try {
-        const res = await fetch(`${scriptURL}?action=getAttendanceReport&className=${className}&date=${reportDate}`);
+      if (reportType === "daily") {
+        const date = document.getElementById("date").value;
+        if (!date) return alert("Please select a date.");
+        const formatted = new Date(date).toLocaleDateString("en-GB").split("/").join("-");
+        const res = await fetch(
+          `https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getAttendanceReport&className=${className}&date=${formatted}`
+        );
         const data = await res.json();
-        if (!data || data.length === 0) return container.innerHTML = "<p>No attendance data found for this date.</p>";
-        renderSingleDayReport(data);
-      } catch (err) {
-        console.error("Error loading report", err);
-        container.innerHTML = "<p>Failed to load report.</p>";
+        showTable([formatted], data);
+      } else {
+        const month = document.getElementById("month").value;
+        if (!month) return alert("Please select a month.");
+        const [year, mon] = month.split("-");
+        const sheet = await fetch(
+          `https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getStudents&className=${className}`
+        );
+        const students = await sheet.json();
+
+        const datesRes = await fetch(
+          `https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getMonthDates&className=${className}&year=${year}&month=${mon}`
+        );
+        const datesData = await datesRes.json(); // Should return array of available date headers
+        const attendance = [];
+
+        for (let date of datesData) {
+          const res = await fetch(
+            `https://script.google.com/macros/s/PASTE_YOUR_DEPLOYED_URL_HERE/exec?action=getAttendanceReport&className=${className}&date=${date}`
+          );
+          const report = await res.json();
+          attendance.push({ date, data: report });
+        }
+
+        showMonthlyTable(students, attendance);
       }
     }
 
-    function renderSingleDayReport(data) {
-  const container = document.getElementById("reportContainer");
-  let hadir = 0, izin = 0, sakit = 0, alfa = 0;
-
-  let table = `<table id="attendanceTable">
-                <thead><tr><th>Roll</th><th>Name</th><th>Status</th></tr></thead><tbody>`;
-
-  data.forEach(student => {
-    let statusLabel = "", statusClass = "";
-
-    switch (student.status) {
-      case "Hadir":
-        statusLabel = "✅ Hadir";
-        statusClass = "present";
-        hadir++;
-        break;
-      case "Izin":
-        statusLabel = "🟡 Izin";
-        statusClass = "warning";
-        izin++;
-        break;
-      case "Sakit":
-        statusLabel = "🔴 Sakit";
-        statusClass = "absent";
-        sakit++;
-        break;
-      case "Alfa":
-      default:
-        statusLabel = "❌ Absen";
-        statusClass = "absent";
-        alfa++;
-        break;
+    function showTable(dateArr, reportData) {
+      let html = "<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>";
+      reportData.forEach(row => {
+        html += `<tr>
+          <td>${row.roll}</td>
+          <td>${row.name}</td>
+          <td>${row.status}</td>
+        </tr>`;
+      });
+      html += "</table>";
+      document.getElementById("reportSection").innerHTML = html;
     }
 
-    table += `<tr>
-                <td>${student.roll}</td>
-                <td>${student.name}</td>
-                <td class="${statusClass}">${statusLabel}</td>
-              </tr>`;
-  });
+    function showMonthlyTable(students, monthlyData) {
+      const dates = monthlyData.map(e => e.date);
+      let html = `<table><tr><th>Roll</th><th>Name</th>`;
+      dates.forEach(date => html += `<th>${date}</th>`);
+      html += "</tr>";
 
-  table += `</tbody></table>
-            <div class="summary">
-              ✅ Hadir: ${hadir} | 🟡 Izin: ${izin} | 🔴 Sakit: ${sakit} | ❌ Alfa: ${alfa}
-            </div>`;
-
-  container.innerHTML = table;
-}
-
-
-    function exportCSV() {
-      const table = document.getElementById("attendanceTable");
-      if (!table) return alert("No report to export.");
-      let csv = [];
-      const rows = table.querySelectorAll("tr");
-
-      rows.forEach(row => {
-        const cols = row.querySelectorAll("td, th");
-        let rowData = [];
-        cols.forEach(col => rowData.push(col.innerText));
-        csv.push(rowData.join(","));
+      students.forEach(std => {
+        html += `<tr><td>${std.roll}</td><td>${std.name}</td>`;
+        dates.forEach(date => {
+          const day = monthlyData.find(d => d.date === date);
+          const entry = day.data.find(d => d.roll == std.roll);
+          html += `<td>${entry ? entry.status : "-"}</td>`;
+        });
+        html += "</tr>";
       });
 
-      const blob = new Blob([csv.join("\n")], { type: "text/csv" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "Attendance_Report.csv";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      html += "</table>";
+      document.getElementById("reportSection").innerHTML = html;
     }
+
+    loadClasses();
   </script>
 </body>
 </html>
