@@ -131,15 +131,19 @@
   </header>
 
   <div class="container">
-    <div class="date" id="currentDate"></div>
+  <label for="attendanceDate">Select Date:</label>
+  <input type="date" id="attendanceDate" />
 
-    <label for="classSelect">Select Class:</label>
-    <select id="classSelect" onchange="loadStudents()">
-      <option value="">-- Select Class --</option>
-      <option value="Class_1A">Class 1A</option>
-      <option value="Class_2A">Class 2A</option>
-      <!-- Add more classes as needed -->
-    </select>
+  <div class="date" id="currentDate"></div>
+
+  <label for="classSelect">Select Class:</label>
+  <select id="classSelect" onchange="loadStudents()">
+    <option value="">-- Select Class --</option>
+    <option value="Class_1A">Class 1A</option>
+    <option value="Class_2A">Class 2A</option>
+    <!-- Add more classes as needed -->
+  </select>
+
 
     <div class="student-list" id="studentList"></div>
 
