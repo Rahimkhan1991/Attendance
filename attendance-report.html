@@ -163,7 +163,8 @@
 
       let url = scriptURL + `?action=getAttendanceReport&className=${cls}`;
       if (reportType==='daily') {
-        const d = new Date(dateInput).toLocaleDateString('en-GB');
+       const dObj = new Date(dateInput);
+       const d = `${('0' + dObj.getDate()).slice(-2)}/${('0' + (dObj.getMonth() + 1)).slice(-2)}/${dObj.getFullYear()}`;
         url += `&date=${encodeURIComponent(d)}`;
       } else {
         const [y,m] = dateInput.split('-');
