@@ -164,7 +164,9 @@
       let url = scriptURL + `?action=getAttendanceReport&className=${cls}`;
       if (reportType==='daily') {
        const dObj = new Date(dateInput);
-       const d = `${dObj.getDate()}/${dObj.getMonth() + 1}/${dObj.getFullYear()}`;
+       const day = String(dObj.getDate()).padStart(2, '0'); // Adds leading zero
+       const month = String(dObj.getMonth() + 1).padStart(2, '0'); // Adds leading zero
+      const d = `${day}/${month}/${dObj.getFullYear()}`;
         url += `&date=${encodeURIComponent(d)}`;
       } else {
         const [y,m] = dateInput.split('-');
