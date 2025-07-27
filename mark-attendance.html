@@ -157,7 +157,7 @@ students.forEach((student, index) => {
   const card = document.createElement("div");
   card.className = "student-card";
   card.innerHTML = `
-    <div class="student-name">${student.roll}. ${student.name}</div>
+    <div class="student-name">${student.roll} - ${student.name}</div>
     <select name="status-${index}" class="status-select" data-roll="${student.roll}">
       <option value="Hadir" selected>✅ Hadir</option>
       <option value="Izin">🟡 Izin</option>
