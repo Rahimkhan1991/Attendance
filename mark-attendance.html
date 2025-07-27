@@ -184,7 +184,7 @@ students.forEach((student, index) => {
 
   selects.forEach((sel, index) => {
     attendance.push({
-      roll: sel.dataset.roll,
+      rollNumber: sel.dataset.roll,
       rowIndex: index,
       status: sel.value
     });
@@ -192,7 +192,7 @@ students.forEach((student, index) => {
 
   const dateStr = formattedDate.split("/").join("/");
 
-  const url = `${scriptURL}?action=submitAttendance&className=${className}&date=${dateStr}&data=${encodeURIComponent(JSON.stringify(attendance))}`;
+  const url = `${scriptURL}?action=markAttendance&className=${className}&attendanceDate=${dateStr}&attendanceData=${encodeURIComponent(JSON.stringify(attendance))}`;
 
   try {
     const res = await fetch(url);
