@@ -172,22 +172,55 @@
     }
 
     function buildTable(data) {
-      let html = '<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>';
-      let csv = 'Roll,Name,Status\n';
-      data.forEach(r => {
-        html += `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.status}</td></tr>`;
-        csv += `${r.roll},${r.name},${r.status}\n`;
+  if (reportType === 'monthly') {
+    const days = Object.keys(data[0].attendance || {});
+    days.sort((a,b) => {
+      const [da, ma, ya] = a.split('/');
+      const [db, mb, yb] = b.split('/');
+      return new Date(`${ya}-${ma}-${da}`) - new Date(`${yb}-${mb}-${db}`);
+    });
+
+    let html = '<table><tr><th>Roll</th><th>Name</th>';
+    days.forEach(d => html += `<th>${d}</th>`);
+    html += '</tr>';
+
+    let csv = 'Roll,Name,' + days.join(',') + '\n';
+
+    data.forEach(r => {
+      html += `<tr><td>${r.roll}</td><td>${r.name}</td>`;
+      csv += `${r.roll},${r.name}`;
+      days.forEach(day => {
+        const val = r.attendance?.[day] || '';
+        html += `<td>${val}</td>`;
+        csv += `,${val}`;
       });
-      html += '</table>';
-      currentTableHTML = html;
-      currentCSV = csv;
+      html += '</tr>';
+      csv += '\n';
+    });
 
-      const rs = document.getElementById('reportSection');
-      rs.innerHTML = html;
+    html += '</table>';
+    currentTableHTML = html;
+    currentCSV = csv;
 
-      document.getElementById('nameFilter').style.display = '';
-      document.getElementById('exportButtons').style.display = 'flex';
-    }
+  } else {
+    // daily report fallback (same as before)
+    let html = '<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>';
+    let csv = 'Roll,Name,Status\n';
+    data.forEach(r => {
+      html += `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.status}</td></tr>`;
+      csv += `${r.roll},${r.name},${r.status}\n`;
+    });
+    html += '</table>';
+    currentTableHTML = html;
+    currentCSV = csv;
+  }
+
+  const rs = document.getElementById('reportSection');
+  rs.innerHTML = currentTableHTML;
+  document.getElementById('nameFilter').style.display = '';
+  document.getElementById('exportButtons').style.display = 'flex';
+}
+
 
     function filterNames(){
       const term = this.value.toLowerCase();
