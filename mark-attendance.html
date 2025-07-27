@@ -2,46 +2,125 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mark Attendance</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <style>
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
     }
+
+    .container {
+      max-width: 700px;
+      margin: 50px auto;
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 30px 40px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
     h2 {
       text-align: center;
+      color: #2c3e50;
+      margin-bottom: 25px;
     }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #34495e;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
     .student-list {
       margin-top: 20px;
     }
+
     .student-item {
+      background: #f9f9f9;
+      border-radius: 6px;
+      padding: 12px 15px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
-      padding: 8px;
-      border-bottom: 1px solid #ccc;
+      align-items: center;
+      transition: background 0.3s;
+      border: 1px solid #e0e0e0;
     }
+
+    .student-item:hover {
+      background: #f0f0f0;
+    }
+
+    .student-item span {
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .student-item select {
+      padding: 6px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
     .btn {
-      margin-top: 20px;
-      padding: 10px 20px;
+      width: 100%;
+      padding: 12px;
+      background: #2e86de;
+      color: white;
       font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .btn:hover {
+      background: #1b4f72;
+    }
+
+    @media screen and (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+
+      .student-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .student-item select {
+        margin-top: 8px;
+        width: 100%;
+      }
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h2>Mark Attendance</h2>
+    <h2>📋 Mark Attendance</h2>
 
     <label for="classSelect">Select Class:</label>
     <select id="classSelect" onchange="loadStudents()" disabled></select>
 
     <div class="student-list" id="studentList"></div>
 
-    <button class="btn" onclick="submitAttendance()">Submit Attendance</button>
+    <button class="btn" onclick="submitAttendance()">✅ Submit Attendance</button>
   </div>
 
   <script>
@@ -53,7 +132,6 @@
     const classSelect = document.getElementById("classSelect");
 
     if (user.role === "admin") {
-      // Admin: all classes
       classSelect.innerHTML = `
         <option value="">-- Select Class --</option>
         <option value="Class_1A">Class 1A</option>
@@ -62,7 +140,6 @@
       `;
       classSelect.disabled = false;
     } else {
-      // Teacher: assigned class only
       classSelect.innerHTML = `<option value="${user.className}" selected>${user.className.replace("_", " ")}</option>`;
       classSelect.disabled = true;
     }
