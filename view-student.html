@@ -212,15 +212,15 @@
         const li = document.createElement("li");
         li.className = "student-card";
 
-        const avatar = document.createElement("div");
-        avatar.className = "avatar";
-        avatar.textContent = (s.name[0] || "?").toUpperCase();
+        ///const avatar = document.createElement("div");
+        ///avatar.className = "avatar";
+        ///avatar.textContent = (s.name[0] || "?").toUpperCase();
 
         const details = document.createElement("div");
         details.className = "student-details";
         details.textContent = `${s.roll} - ${s.name}`;
 
-        li.appendChild(avatar);
+        ///li.appendChild(avatar);
         li.appendChild(details);
         studentList.appendChild(li);
       });
