@@ -8,13 +8,13 @@
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: #eef3f8;
+      background: linear-gradient(135deg, #74ebd5, #acb6e5);
       color: #333;
     }
 
     header {
-      background-color: #4f46e5;
-      color: rgb(236, 224, 48);
+      background-color: #4338ca;
+      color: white;
       padding: 15px 20px;
       display: flex;
       align-items: center;
@@ -30,8 +30,8 @@
     }
 
     .nav-buttons button {
-      background: rgb(233, 182, 182);
-      color: #000000;
+      background: rgba(66, 190, 62, 0.856);
+      color: #07090a;
       border: none;
       padding: 6px 12px;
       margin-left: 8px;
@@ -58,7 +58,7 @@
       padding: 10px;
       margin: 10px 0 20px;
       font-size: 16px;
-      border: 1px solid #80c9a1;
+      border: 1px solid #98ccaf;
       border-radius: 8px;
       outline: none;
     }
@@ -69,7 +69,7 @@
     }
 
     .student-card {
-      background: rgb(219, 177, 177);
+      background: white;
       display: flex;
       align-items: center;
       padding: 12px;
@@ -218,7 +218,7 @@
 
         const details = document.createElement("div");
         details.className = "student-details";
-        details.textContent = `${s.name}`- ${s.roll};
+        details.textContent = `${s.name} - ${s.roll}`;
 
         ///li.appendChild(avatar);
         li.appendChild(details);
