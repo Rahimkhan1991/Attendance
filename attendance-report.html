@@ -28,7 +28,6 @@
       width: 100%;
       margin-bottom: 10px;
       padding: 8px;
-      box-sizing: border-box;
     }
     button {
       background: #4338ca;
@@ -37,14 +36,6 @@
       border-radius: 5px;
       font-size: 16px;
       cursor: pointer;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #3730a3;
-    }
-    button:disabled {
-      background: #cbd5e1;
-      cursor: not-allowed;
     }
     table {
       width: 100%;
@@ -52,16 +43,11 @@
       margin-top: 20px;
     }
     th, td {
-      padding: 10px;
+      padding: 8px;
       border: 1px solid #ccc;
       text-align: center;
     }
-    th {
-      background-color: #e2e8f0;
-    }
-    .hidden { 
-      display: none; 
-    }
+    .hidden { display: none; }
     .report-options {
       display: flex;
       gap: 10px;
@@ -77,41 +63,16 @@
       color: white;
     }
     #reportSection {
-      overflow-x: auto;
-      margin-top: 20px;
-    }
-    #reportSection table {
-      min-width: 600px;
-    }
-    .container {
-      max-width: 90vw;
-    }
-    .error {
-      color: #dc2626;
-      background-color: #fee2e2;
-      padding: 10px;
-      border-radius: 5px;
-      border-left: 4px solid #dc2626;
-    }
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #64748b;
-    }
-    .no-data {
-      text-align: center;
-      padding: 20px;
-      color: #64748b;
-      font-style: italic;
-    }
-    .export-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
-    .export-buttons button {
-      flex: 1;
-    }
+  overflow-x: auto;
+  margin-top: 20px;
+}
+#reportSection table {
+  min-width: 600px;
+}
+.container {
+  max-width: 90vw;
+}
+
   </style>
 </head>
 <body>
@@ -124,9 +85,7 @@
     </div>
 
     <label for="classSelect">Select Class</label>
-    <select id="classSelect" disabled>
-      <option>Loading classes...</option>
-    </select>
+    <select id="classSelect"><option>Loading...</option></select>
 
     <div id="dailyFields">
       <label for="date">Select Date</label>
@@ -135,16 +94,16 @@
 
     <div id="monthlyFields" class="hidden">
       <label for="month">Select Month</label>
-      <input type="month" id="month">
+      <input type="month" id="month" />
     </div>
 
-    <button id="btnFetch" disabled>Get Report</button>
+    <button id="btnFetch">Get Report</button>
 
     <!-- Student filter -->
-    <input type="text" id="nameFilter" placeholder="Filter by student name..." class="hidden">
+    <input type="text" id="nameFilter" placeholder="Filter by student name..." style="display:none;">
 
     <!-- Export buttons -->
-    <div id="exportButtons" class="export-buttons hidden">
+    <div id="exportButtons" style="margin-top:10px; display:none; gap:10px;">
       <button id="btnPDF">📄 Download PDF</button>
       <button id="btnCSV">📁 Download CSV</button>
     </div>
@@ -157,316 +116,157 @@
     let reportType = 'daily';
     let currentTableHTML = '';
     let currentCSV = '';
-    let currentData = [];
 
-    // Initialize the app
-    document.addEventListener('DOMContentLoaded', () => {
-      loadClasses();
-      setupEventListeners();
-    });
-
-    function setupEventListeners() {
-      // Report type toggle
-      document.getElementById('dailyBtn').addEventListener('click', () => toggleType('daily'));
-      document.getElementById('monthlyBtn').addEventListener('click', () => toggleType('monthly'));
-      
-      // Main button
-      document.getElementById('btnFetch').addEventListener('click', fetchReport);
-      
-      // Filter input
-      document.getElementById('nameFilter').addEventListener('input', filterNames);
-      
-      // Export buttons
-      document.getElementById('btnCSV').addEventListener('click', downloadCSV);
-      document.getElementById('btnPDF').addEventListener('click', downloadPDF);
-      
-      // Enable fetch button when date is selected
-      document.getElementById('date').addEventListener('change', checkFormCompletion);
-      document.getElementById('month').addEventListener('change', checkFormCompletion);
-      document.getElementById('classSelect').addEventListener('change', checkFormCompletion);
-    }
-
+    // Toggle buttons behavior
+    document.getElementById('dailyBtn').addEventListener('click', () => toggleType('daily'));
+    document.getElementById('monthlyBtn').addEventListener('click', () => toggleType('monthly'));
     function toggleType(type) {
       reportType = type;
-      document.getElementById('dailyBtn').classList.toggle('active', type === 'daily');
-      document.getElementById('monthlyBtn').classList.toggle('active', type !== 'daily');
-      document.getElementById('dailyFields').classList.toggle('hidden', type !== 'daily');
-      document.getElementById('monthlyFields').classList.toggle('hidden', type === 'daily');
-      
-      // Reset filter and exports when changing report type
-      document.getElementById('nameFilter').classList.add('hidden');
-      document.getElementById('exportButtons').classList.add('hidden');
-      document.getElementById('reportSection').innerHTML = '';
-      
-      checkFormCompletion();
+      document.getElementById('dailyBtn').classList.toggle('active', type==='daily');
+      document.getElementById('monthlyBtn').classList.toggle('active', type!=='daily');
+      document.getElementById('dailyFields').classList.toggle('hidden', type!=='daily');
+      document.getElementById('monthlyFields').classList.toggle('hidden', type==='daily');
+      document.getElementById('nameFilter').style.display = 'none';
+      document.getElementById('exportButtons').style.display = 'none';
+      reportSection.innerHTML = '';
     }
 
-    function checkFormCompletion() {
-      const classSelected = document.getElementById('classSelect').value;
-      const dateValue = reportType === 'daily' 
-        ? document.getElementById('date').value
-        : document.getElementById('month').value;
-      
-      document.getElementById('btnFetch').disabled = !(classSelected && dateValue);
-    }
-
-    async function loadClasses() {
+    // Load classes
+    async function loadClasses(){
       try {
-        document.getElementById('classSelect').disabled = true;
-        
         const res = await fetch(scriptURL + '?action=getClassList');
-        if (!res.ok) throw new Error('Failed to fetch classes');
-        
         const list = await res.json();
         const sel = document.getElementById('classSelect');
-        
         sel.innerHTML = '<option value="">-- Select Class --</option>';
         list.forEach(c => sel.add(new Option(c, c)));
-        sel.disabled = false;
-        
-        checkFormCompletion();
       } catch(e) {
-        console.error('Error loading classes:', e);
-        document.getElementById('classSelect').innerHTML = '<option value="">Error loading classes</option>';
+        console.error(e);
+        alert('Failed to load classes');
       }
+    }
+    loadClasses();
+
+    document.getElementById('btnFetch').addEventListener('click', fetchReport);
+    document.getElementById('nameFilter').addEventListener('input', filterNames);
+
+    document.getElementById('btnCSV').addEventListener('click', downloadCSV);
+    document.getElementById('btnPDF').addEventListener('click', downloadPDF);
+
+async function fetchReport() {
+  const cls = document.getElementById('classSelect').value;
+  if (!cls) return alert('Please select a class.');
+  
+  const dateInput = reportType === 'daily' ? document.getElementById('date').value :
+                   document.getElementById('month').value;
+  if (!dateInput) return alert('Please select date/month.');
+
+  document.getElementById('reportSection').innerText = 'Loading...';
+
+  let url = scriptURL + `?action=getAttendanceReport&className=${encodeURIComponent(cls)}`;
+  
+  if (reportType === 'daily') {
+    const dObj = new Date(dateInput);
+    // Using the improved formatting with leading zeros
+    const day = String(dObj.getDate()).padStart(2, '0');
+    const month = String(dObj.getMonth() + 1).padStart(2, '0');
+    const d = `${day}/${month}/${dObj.getFullYear()}`;
+    
+    url += `&date=${encodeURIComponent(d)}`;
+  } else {
+    const [y, m] = dateInput.split('-');
+    url += `&month=${m}&year=${y}`;
+  }
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data || data.length === 0) {
+      document.getElementById('reportSection').innerHTML = '<p>No data found.</p>';
+      document.getElementById('exportButtons').style.display = 'none';
+      return;
     }
 
-    async function fetchReport() {
-      const cls = document.getElementById('classSelect').value;
-      const dateInput = reportType === 'daily' 
-        ? document.getElementById('date').value
-        : document.getElementById('month').value;
-      
-      try {
-        // UI Loading state
-        const btnFetch = document.getElementById('btnFetch');
-        btnFetch.disabled = true;
-        btnFetch.textContent = 'Loading...';
-        
-        document.getElementById('reportSection').innerHTML = '<div class="loading">Loading attendance data...</div>';
-        document.getElementById('nameFilter').classList.add('hidden');
-        document.getElementById('exportButtons').classList.add('hidden');
-        
-        // Build request URL
-        let url = scriptURL + `?action=getAttendanceReport&className=${encodeURIComponent(cls)}`;
-        
-        if (reportType === 'daily') {
-          const dObj = new Date(dateInput);
-          const day = String(dObj.getDate()).padStart(2, '0');
-          const month = String(dObj.getMonth() + 1).padStart(2, '0');
-          const d = `${day}/${month}/${dObj.getFullYear()}`;
-          url += `&date=${encodeURIComponent(d)}`;
-        } else {
-          const [y, m] = dateInput.split('-');
-          url += `&month=${m}&year=${y}`;
-        }
-        
-        // Fetch data
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const result = await response.json();
-        
-        // Handle error responses
-        if (!result || result.success === false) {
-          throw new Error(result?.message || 'Unknown server error');
-        }
-        
-        // Ensure data is an array
-        if (!Array.isArray(result.data)) {
-          throw new Error('Invalid data format received');
-        }
-        
-        // Store and display data
-        currentData = result.data;
-        buildTable(currentData);
-        
-      } catch(error) {
-        console.error('Error fetching report:', error);
-        document.getElementById('reportSection').innerHTML = 
-          `<div class="error">Error: ${error.message || 'Failed to load data'}</div>`;
-      } finally {
-        // Reset button state
-        const btnFetch = document.getElementById('btnFetch');
-        btnFetch.disabled = false;
-        btnFetch.textContent = 'Get Report';
-      }
-    }
+    buildTable(data);
+  } catch (error) {
+    console.error('Error fetching report:', error);
+    document.getElementById('reportSection').innerHTML = '<p>Error loading data. Check console for details.</p>';
+  }
+}
 
     function buildTable(data) {
-      if (!data || data.length === 0) {
-        document.getElementById('reportSection').innerHTML = '<div class="no-data">No attendance data found</div>';
-        document.getElementById('exportButtons').classList.add('hidden');
-        return;
-      }
-      
-      if (reportType === 'monthly') {
-        buildMonthlyTable(data);
-      } else {
-        buildDailyTable(data);
-      }
-      
-      // Show filter and export options
-      document.getElementById('nameFilter').classList.remove('hidden');
-      document.getElementById('exportButtons').classList.remove('hidden');
-    }
+  if (reportType === 'monthly') {
+    const days = Object.keys(data[0].attendance || {});
+    days.sort((a,b) => {
+      const [da, ma, ya] = a.split('/');
+      const [db, mb, yb] = b.split('/');
+      return new Date(`${ya}-${ma}-${da}`) - new Date(`${yb}-${mb}-${db}`);
+    });
 
-    function buildDailyTable(data) {
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th>Roll</th>
-              <th>Name</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-      
-      let csv = 'Roll,Name,Status\n';
-      
-      data.forEach(r => {
-        html += `
-          <tr>
-            <td>${r.roll || ''}</td>
-            <td>${r.name || ''}</td>
-            <td>${r.status || '-'}</td>
-          </tr>
-        `;
-        csv += `${r.roll},${r.name},${r.status || '-'}\n`;
-      });
-      
-      html += `</tbody></table>`;
-      
-      currentTableHTML = html;
-      currentCSV = csv;
-      document.getElementById('reportSection').innerHTML = html;
-    }
+    let html = '<table><tr><th>Roll</th><th>Name</th>';
+    days.forEach(d => html += `<th>${d}</th>`);
+    html += '</tr>';
 
-    function buildMonthlyTable(data) {
-      // Get all unique dates from the data
-      const allDates = new Set();
-      data.forEach(item => {
-        if (item.attendance) {
-          Object.keys(item.attendance).forEach(date => allDates.add(date));
-        }
-      });
-      
-      // Sort dates chronologically
-      const sortedDates = Array.from(allDates).sort((a, b) => {
-        const [dayA, monthA, yearA] = a.split('/');
-        const [dayB, monthB, yearB] = b.split('/');
-        return new Date(`${yearA}-${monthA}-${dayA}`) - new Date(`${yearB}-${monthB}-${dayB}`);
-      });
-      
-      // Build table header
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th>Roll</th>
-              <th>Name</th>
-      `;
-      
-      let csv = 'Roll,Name,';
-      
-      sortedDates.forEach(date => {
-        html += `<th>${date}</th>`;
-        csv += `${date},`;
-      });
-      
-      html += `</tr></thead><tbody>`;
-      csv = csv.slice(0, -1) + '\n'; // Remove trailing comma
-      
-      // Build table rows
-      data.forEach(item => {
-        html += `<tr><td>${item.roll || ''}</td><td>${item.name || ''}</td>`;
-        csv += `${item.roll},${item.name}`;
-        
-        sortedDates.forEach(date => {
-          const status = item.attendance?.[date] || '-';
-          html += `<td>${status}</td>`;
-          csv += `,${status}`;
-        });
-        
-        html += `</tr>`;
-        csv += '\n';
-      });
-      
-      html += `</tbody></table>`;
-      
-      currentTableHTML = html;
-      currentCSV = csv;
-      document.getElementById('reportSection').innerHTML = html;
-    }
+    let csv = 'Roll,Name,' + days.join(',') + '\n';
 
-    function filterNames() {
-      const term = this.value.toLowerCase().trim();
-      const rows = document.querySelectorAll('#reportSection tbody tr');
-      
-      rows.forEach(row => {
-        const nameCell = row.querySelector('td:nth-child(2)'); // Second column is name
-        if (nameCell) {
-          const name = nameCell.textContent.toLowerCase();
-          row.style.display = name.includes(term) ? '' : 'none';
-        }
+    data.forEach(r => {
+      html += `<tr><td>${r.roll}</td><td>${r.name}</td>`;
+      csv += `${r.roll},${r.name}`;
+      days.forEach(day => {
+        const val = r.attendance?.[day] || '';
+        html += `<td>${val}</td>`;
+        csv += `,${val}`;
+      });
+      html += '</tr>';
+      csv += '\n';
+    });
+
+    html += '</table>';
+    currentTableHTML = html;
+    currentCSV = csv;
+
+  } else {
+    // daily report fallback (same as before)
+    let html = '<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>';
+    let csv = 'Roll,Name,Status\n';
+    data.forEach(r => {
+      html += `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.status}</td></tr>`;
+      csv += `${r.roll},${r.name},${r.status}\n`;
+    });
+    html += '</table>';
+    currentTableHTML = html;
+    currentCSV = csv;
+  }
+
+  const rs = document.getElementById('reportSection');
+  rs.innerHTML = currentTableHTML;
+  document.getElementById('nameFilter').style.display = '';
+  document.getElementById('exportButtons').style.display = 'flex';
+}
+
+
+    function filterNames(){
+      const term = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#reportSection table tr');
+      rows.forEach((tr,i)=> {
+        if (i===0) return;
+        tr.style.display = tr.children[1].textContent.toLowerCase().includes(term) ? '' : 'none';
       });
     }
 
-    function downloadCSV() {
-      if (!currentCSV) return;
-      
-      const blob = new Blob([currentCSV], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
+    function downloadCSV(){
+      const blob = new Blob([currentCSV],{type:'text/csv'});
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `attendance_${reportType}_${new Date().toISOString().slice(0,10)}.csv`;
-      document.body.appendChild(a);
+      a.href = URL.createObjectURL(blob);
+      a.download = 'attendance.csv';
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     }
 
-    function downloadPDF() {
-      if (!currentTableHTML) return;
-      
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Attendance Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-            th { background-color: #f2f2f2; }
-            h1 { text-align: center; }
-            .report-info { margin-bottom: 20px; }
-          </style>
-        </head>
-        <body>
-          <h1>Attendance Report</h1>
-          <div class="report-info">
-            <p><strong>Class:</strong> ${document.getElementById('classSelect').value}</p>
-            <p><strong>Report Type:</strong> ${reportType === 'daily' ? 'Daily' : 'Monthly'}</p>
-            ${reportType === 'daily' 
-              ? `<p><strong>Date:</strong> ${document.getElementById('date').value}</p>`
-              : `<p><strong>Month:</strong> ${document.getElementById('month').value}</p>`}
-          </div>
-          ${currentTableHTML}
-          <script>
-            setTimeout(() => {
-              window.print();
-              window.close();
-            }, 500);
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
+    function downloadPDF(){
+      const w = window.open();
+      w.document.write(`<html><head><title>Report</title></head><body>${currentTableHTML}</body></html>`);
+      w.print();
     }
   </script>
 </body>
-
 </html>
