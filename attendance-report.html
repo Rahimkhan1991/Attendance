@@ -78,6 +78,39 @@
   </style>
 </head>
 <body>
+  <!-- Add inside <body> -->
+<div class="container">
+  <h2>Attendance Report</h2>
+
+  <div class="report-options">
+    <button id="dailyBtn" class="active">Daily Report</button>
+    <button id="monthlyBtn">Monthly Report</button>
+  </div>
+
+  <label for="classSelect">Select Class</label>
+  <select id="classSelect"></select>
+
+  <div id="dailyFields">
+    <label for="date">Select Date</label>
+    <input type="date" id="date">
+  </div>
+
+  <div id="monthlyFields" class="hidden">
+    <label for="month">Select Month</label>
+    <input type="month" id="month" />
+  </div>
+
+  <button onclick="fetchReport()">Get Report</button>
+
+  <!-- ✅ Added Export Buttons -->
+  <div style="margin-top: 10px; display: flex; gap: 10px;">
+    <button onclick="downloadPDF()">📄 Download PDF</button>
+    <button onclick="downloadCSV()">📁 Download CSV</button>
+  </div>
+
+  <div id="reportSection"></div>
+</div>
+
   <div class="container">
     <h2>Attendance Report</h2>
 
@@ -105,113 +138,115 @@
   </div>
 
   <script>
-    let reportType = "daily";
+    let currentReportHTML = ""; // store latest table
+let currentReportText = ""; // store CSV-friendly text
 
-    document.getElementById("dailyBtn").addEventListener("click", () => {
-      reportType = "daily";
-      document.getElementById("dailyFields").classList.remove("hidden");
-      document.getElementById("monthlyFields").classList.add("hidden");
-      toggleButtons("dailyBtn");
+// Updated fetchReport()
+async function fetchReport() {
+  const className = document.getElementById("classSelect").value;
+  if (!className) return alert("Please select a class.");
+  document.getElementById("reportSection").innerHTML = "Loading...";
+
+  if (reportType === "daily") {
+    const date = document.getElementById("date").value;
+    if (!date) return alert("Please select a date.");
+    const formatted = new Date(date).toLocaleDateString("en-GB");
+    const res = await fetch(
+      `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendanceReport&className=${className}&date=${formatted}`
+    );
+    const data = await res.json();
+    showTable([formatted], data);
+  } else {
+    const month = document.getElementById("month").value;
+    if (!month) return alert("Please select a month.");
+    const [year, mon] = month.split("-");
+    const studentsRes = await fetch(
+      `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getStudents&className=${className}`
+    );
+    const students = await studentsRes.json();
+
+    const reportRes = await fetch(
+      `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendanceReport&className=${className}&month=${mon}&year=${year}`
+    );
+    const report = await reportRes.json();
+    showMonthlyTable(report);
+  }
+}
+
+function showTable(dateArr, reportData) {
+  let html = "<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>";
+  let csv = "Roll,Name,Status\n";
+
+  reportData.forEach(row => {
+    html += `<tr>
+      <td>${row.roll}</td>
+      <td>${row.name}</td>
+      <td>${row.status}</td>
+    </tr>`;
+    csv += `${row.roll},${row.name},${row.status}\n`;
+  });
+
+  html += "</table>";
+  currentReportHTML = html;
+  currentReportText = csv;
+  document.getElementById("reportSection").innerHTML = html;
+}
+
+function showMonthlyTable(report) {
+  if (!report || report.length === 0) {
+    document.getElementById("reportSection").innerHTML = "<p>No data found.</p>";
+    return;
+  }
+
+  const dates = Object.keys(report[0].attendance);
+  let html = "<table><tr><th>Roll</th><th>Name</th>";
+  let csv = "Roll,Name," + dates.join(",") + "\n";
+
+  dates.forEach(d => html += `<th>${d}</th>`);
+  html += "</tr>";
+
+  report.forEach(row => {
+    html += `<tr><td>${row.roll}</td><td>${row.name}</td>`;
+    csv += `${row.roll},${row.name}`;
+    dates.forEach(date => {
+      const status = row.attendance[date] || "-";
+      html += `<td>${status}</td>`;
+      csv += `,${status}`;
     });
+    html += "</tr>";
+    csv += "\n";
+  });
 
-    document.getElementById("monthlyBtn").addEventListener("click", () => {
-      reportType = "monthly";
-      document.getElementById("dailyFields").classList.add("hidden");
-      document.getElementById("monthlyFields").classList.remove("hidden");
-      toggleButtons("monthlyBtn");
-    });
+  html += "</table>";
+  currentReportHTML = html;
+  currentReportText = csv;
+  document.getElementById("reportSection").innerHTML = html;
+}
 
-    function toggleButtons(activeId) {
-      document.querySelectorAll('.report-options button').forEach(btn => {
-        btn.classList.remove("active");
-      });
-      document.getElementById(activeId).classList.add("active");
-    }
+// Download CSV
+function downloadCSV() {
+  if (!currentReportText) return alert("No report to export.");
+  const blob = new Blob([currentReportText], { type: "text/csv" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "attendance_report.csv";
+  link.click();
+}
 
-    async function loadClasses() {
-      const res = await fetch(
-        "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getClassList"
-      );
-      const data = await res.json();
-      const select = document.getElementById("classSelect");
-      data.forEach(cls => {
-        const option = document.createElement("option");
-        option.value = cls;
-        option.textContent = cls;
-        select.appendChild(option);
-      });
-    }
+// Download PDF
+function downloadPDF() {
+  if (!currentReportHTML) return alert("No report to export.");
+  const win = window.open("", "_blank");
+  win.document.write(`
+    <html><head><title>Attendance Report</title></head><body>
+    <h3 style="text-align:center;">Attendance Report</h3>
+    ${currentReportHTML}
+    </body></html>
+  `);
+  win.document.close();
+  win.print();
+}
 
-    async function fetchReport() {
-      const className = document.getElementById("classSelect").value;
-      if (reportType === "daily") {
-        const date = document.getElementById("date").value;
-        if (!date) return alert("Please select a date.");
-        const formatted = new Date(date).toLocaleDateString("en-GB").split("/").join("-");
-        const res = await fetch(
-          `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendanceReport&className=${className}&date=${formatted}`
-        );
-        const data = await res.json();
-        showTable([formatted], data);
-      } else {
-        const month = document.getElementById("month").value;
-        if (!month) return alert("Please select a month.");
-        const [year, mon] = month.split("-");
-        const sheet = await fetch(
-          `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getStudents&className=${className}`
-        );
-        const students = await sheet.json();
-
-        const datesRes = await fetch(
-          `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getMonthDates&className=${className}&year=${year}&month=${mon}`
-        );
-        const datesData = await datesRes.json(); // Should return array of available date headers
-        const attendance = [];
-
-        for (let date of datesData) {
-          const res = await fetch(
-            `https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec?action=getAttendanceReport&className=${className}&date=${date}`
-          );
-          const report = await res.json();
-          attendance.push({ date, data: report });
-        }
-
-        showMonthlyTable(students, attendance);
-      }
-    }
-
-    function showTable(dateArr, reportData) {
-      let html = "<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>";
-      reportData.forEach(row => {
-        html += `<tr>
-          <td>${row.roll}</td>
-          <td>${row.name}</td>
-          <td>${row.status}</td>
-        </tr>`;
-      });
-      html += "</table>";
-      document.getElementById("reportSection").innerHTML = html;
-    }
-
-    function showMonthlyTable(students, monthlyData) {
-      const dates = monthlyData.map(e => e.date);
-      let html = `<table><tr><th>Roll</th><th>Name</th>`;
-      dates.forEach(date => html += `<th>${date}</th>`);
-      html += "</tr>";
-
-      students.forEach(std => {
-        html += `<tr><td>${std.roll}</td><td>${std.name}</td>`;
-        dates.forEach(date => {
-          const day = monthlyData.find(d => d.date === date);
-          const entry = day.data.find(d => d.roll == std.roll);
-          html += `<td>${entry ? entry.status : "-"}</td>`;
-        });
-        html += "</tr>";
-      });
-
-      html += "</table>";
-      document.getElementById("reportSection").innerHTML = html;
-    }
 
     loadClasses();
   </script>
