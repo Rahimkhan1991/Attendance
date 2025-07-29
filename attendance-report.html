@@ -270,54 +270,36 @@ async function fetchReport() {
       a.click();
     }
 
-    
-function downloadPDF() {
-  const schoolName = "SDN Bandungrejosari 3 Malang";
-  const className = "Class 6B";
-  const teacherName = "Mr. Rahim";
+<script>
+  function downloadPDF() {
+    const schoolName = "SDN Bandungrejosari 3 Malang";
+    const className = document.getElementById('classSelect').value || "Class";
+    const teacherName = "Mr. Rahim";  // Static name as you wanted
 
-  const headerHTML = `
-    <div style="text-align:center; margin-bottom:20px;">
-      <h2 style="margin: 0; color: #007bff;">${schoolName}</h2>
-      <p style="margin: 5px 0;"><strong>Class:</strong> ${className} | <strong>Teacher:</strong> ${teacherName}</p>
-      <hr style="border: 1px solid #007bff; margin-top: 10px;" />
-    </div>
-  `;
+    const headerHTML = '' +
+      '<div style="text-align:center; margin-bottom:20px;">' +
+      '<h2 style="margin: 0; color: #007bff;">' + schoolName + '</h2>' +
+      '<p style="margin: 5px 0;"><strong>Class:</strong> ' + className +
+      ' | <strong>Teacher:</strong> ' + teacherName + '</p>' +
+      '<hr style="border: 1px solid #007bff; margin-top: 10px;" />' +
+      '</div>';
 
-  const w = window.open();
-  w.document.write(`
-    <html>
-      <head>
-        <title>Attendance Report</title>
-        <style>
-          body {
-            font-family: 'Segoe UI', sans-serif;
-            padding: 20px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-          }
-          th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: center;
-          }
-          th {
-            background-color: #f0f8ff;
-            color: #333;
-          }
-        </style>
-      </head>
-      <body>
-        ${headerHTML}
-        ${currentTableHTML}
-      </body>
-    </html>
-  `);
-  w.print();
-}
+    const w = window.open();
+    w.document.write(
+      '<html><head><title>Attendance Report</title><style>' +
+      'body { font-family: Segoe UI, sans-serif; padding: 20px; }' +
+      'table { width: 100%; border-collapse: collapse; margin-top: 10px; }' +
+      'th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }' +
+      'th { background-color: #f0f8ff; color: #333; }' +
+      '</style></head><body>' +
+      headerHTML +
+      currentTableHTML +
+      '</body></html>'
+    );
+    w.print();
+  }
+</script>
+
 
   </script>
 </body>
