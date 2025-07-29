@@ -156,6 +156,21 @@
   </div>
 
 <script>
+  // Define Web App URL here
+const scriptURL = 'https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxxxxxxx/exec';
+
+// Example fetch usage:
+fetch(scriptURL, {
+  method: 'POST',
+  body: JSON.stringify({
+    action: 'getClassList'
+  }),
+})
+.then(res => res.json())
+.then(data => {
+  console.log(data); // class list
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   // Toggle for general report (daily/monthly)
   const dailyBtn = document.getElementById('dailyBtn');
