@@ -190,13 +190,21 @@ async function fetchReport() {
     buildTable(data);
   } catch (error) {
     console.error('Error fetching report:', error);
-    document.getElementById('reportSection').innerHTML = '<p>Error loading data. Check console for details.</p>';
+    document.getElementById('reportSection').innerHTML = '<p>Attendance for this day hasnt been marked yet. </p>';
   }
 }
 
     function buildTable(data) {
   if (reportType === 'monthly') {
     const days = Object.keys(data[0].attendance || {});
+     if (days.length === 0) {
+      document.getElementById('reportSection').innerHTML = '<p>No attendance has been marked yet for this month.</p>';
+      document.getElementById('exportButtons').style.display = 'none';
+      return; // Exit the function if no attendance data
+    }
+
+
+
     days.sort((a,b) => {
       const [da, ma, ya] = a.split('/');
       const [db, mb, yb] = b.split('/');
