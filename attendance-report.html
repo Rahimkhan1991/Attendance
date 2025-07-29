@@ -1,173 +1,117 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance Report</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(90deg, #74ebd5, #acb6e5);
-      padding: 20px;
-      margin: 0;
+      margin: 20px;
+      background-color: #f4f4f4;
     }
     h2 {
       text-align: center;
-      color: #0f172a;
+      color: #333;
     }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    #controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
     }
-    label, select, input, button {
-      display: block;
-      width: 100%;
-      margin-bottom: 10px;
+    @media (min-width: 600px) {
+      #controls {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+    select, input[type="date"], input[type="month"] {
       padding: 8px;
-    }
-    button {
-      background: #4338ca;
-      color: white;
-      border: none;
-      border-radius: 5px;
       font-size: 16px;
-      cursor: pointer;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
-    .hidden { display: none; }
-    .report-options {
+    .report-toggle {
       display: flex;
       gap: 10px;
-      margin-bottom: 15px;
     }
-    .report-options button {
-      flex: 1;
-      background: #e2e8f0;
-      color: #1e293b;
-    }
-    .report-options button.active {
-      background: #4338ca;
-      color: white;
+    .report-toggle label {
+      font-size: 16px;
     }
     #reportSection {
-      overflow-x: auto;
       margin-top: 20px;
     }
-    #reportSection table {
-      min-width: 600px;
+    #exportButtons {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
     }
-    .container {
-      max-width: 90vw;
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #1976d2;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Attendance Report</h2>
+  <h2>Attendance Report</h2>
+  <div id="controls">
+    <select id="classSelect">
+      <option value="">Select Class</option>
+      <option value="Class 1A">Class 1A</option>
+      <option value="Class 1B">Class 1B</option>
+      <!-- Add more classes as needed -->
+    </select>
 
-    <div class="report-options">
-      <button id="dailyBtn" class="active">Daily Report</button>
-      <button id="monthlyBtn">Monthly Report</button>
+    <div class="report-toggle">
+      <label><input type="radio" name="reportType" value="daily" checked onchange="toggleDatePicker('daily')"> Daily</label>
+      <label><input type="radio" name="reportType" value="monthly" onchange="toggleDatePicker('monthly')"> Monthly</label>
     </div>
 
-    <label for="classSelect">Select Class</label>
-    <select id="classSelect"><option>Loading...</option></select>
+    <input type="date" id="date" />
+    <input type="month" id="month" style="display:none" />
+    <button onclick="fetchReport()">Get Report</button>
+  </div>
 
-    <div id="dailyFields">
-      <label for="date">Select Date</label>
-      <input type="date" id="date">
-    </div>
-
-    <div id="monthlyFields" class="hidden">
-      <label for="month">Select Month</label>
-      <input type="month" id="month" />
-    </div>
-
-    <button id="btnFetch">Get Report</button>
-
-    <!-- Student filter -->
-    <input type="text" id="nameFilter" placeholder="Filter by student name..." style="display:none;">
-
-    <!-- Export buttons -->
-    <div id="exportButtons" style="margin-top:10px; display:none; gap:10px;">
-      <button id="btnPDF">📄 Download PDF</button>
-      <button id="btnCSV">📁 Download CSV</button>
-    </div>
-
-    <div id="reportSection"></div>
+  <div id="reportSection"></div>
+  <div id="exportButtons" style="display:none">
+    <button onclick="downloadCSV()">📄 Export CSV</button>
+    <button onclick="downloadPDF()">📕 Download PDF</button>
   </div>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec';
     let reportType = 'daily';
     let currentTableHTML = '';
     let currentCSV = '';
+    const scriptURL = 'YOUR_SCRIPT_URL_HERE';
 
-    // Toggle buttons behavior
-    document.getElementById('dailyBtn').addEventListener('click', () => toggleType('daily'));
-    document.getElementById('monthlyBtn').addEventListener('click', () => toggleType('monthly'));
-    function toggleType(type) {
+    function toggleDatePicker(type) {
       reportType = type;
-      document.getElementById('dailyBtn').classList.toggle('active', type === 'daily');
-      document.getElementById('monthlyBtn').classList.toggle('active', type !== 'daily');
-      document.getElementById('dailyFields').classList.toggle('hidden', type !== 'daily');
-      document.getElementById('monthlyFields').classList.toggle('hidden', type === 'daily');
-      document.getElementById('nameFilter').style.display = 'none';
-      document.getElementById('exportButtons').style.display = 'none';
-      reportSection.innerHTML = '';
+      document.getElementById('date').style.display = type === 'daily' ? 'inline-block' : 'none';
+      document.getElementById('month').style.display = type === 'monthly' ? 'inline-block' : 'none';
     }
-
-    // Load classes
-    async function loadClasses() {
-      try {
-        const res = await fetch(scriptURL + '?action=getClassList');
-        const list = await res.json();
-        const sel = document.getElementById('classSelect');
-        sel.innerHTML = '<option value="">-- Select Class --</option>';
-        list.forEach(c => sel.add(new Option(c, c)));
-      } catch (e) {
-        console.error(e);
-        alert('Failed to load classes');
-      }
-    }
-    loadClasses();
-
-    document.getElementById('btnFetch').addEventListener('click', fetchReport);
-    document.getElementById('nameFilter').addEventListener('input', filterNames);
-
-    document.getElementById('btnCSV').addEventListener('click', downloadCSV);
-    document.getElementById('btnPDF').addEventListener('click', downloadPDF);
 
     async function fetchReport() {
       const cls = document.getElementById('classSelect').value;
       if (!cls) return alert('Please select a class.');
-      
+
       const dateInput = reportType === 'daily' ? document.getElementById('date').value : document.getElementById('month').value;
       if (!dateInput) return alert('Please select date/month.');
 
       document.getElementById('reportSection').innerText = 'Loading...';
-
       let url = scriptURL + `?action=getAttendanceReport&className=${encodeURIComponent(cls)}`;
-      
+
       if (reportType === 'daily') {
         const dObj = new Date(dateInput);
         const day = String(dObj.getDate()).padStart(2, '0');
         const month = String(dObj.getMonth() + 1).padStart(2, '0');
         const d = `${day}/${month}/${dObj.getFullYear()}`;
-        
         url += `&date=${encodeURIComponent(d)}`;
       } else {
         const [y, m] = dateInput.split('-');
@@ -187,42 +131,42 @@
         buildTable(data);
       } catch (error) {
         console.error('Error fetching report:', error);
-        document.getElementById('reportSection').innerHTML = '<p>Attendance for this day hasn\'t been marked yet.</p>';
+        document.getElementById('reportSection').innerHTML = '<p>Error loading data. Check console for details.</p>';
       }
     }
 
     function buildTable(data) {
-      if (reportType === 'monthly') {
-        const days = Object.keys(data[0].attendance || {});
-        if (days.length === 0) {
-          document.getElementById('reportSection').innerHTML = '<p>No attendance has been marked yet for this month.</p>';
-          document.getElementById('exportButtons').style.display = 'none';
-          return;
-        }
+      let html = '<table border="1" cellpadding="5" cellspacing="0"><tr><th>Name</th><th>Roll</th><th>Attendance</th></tr>';
+      let csv = 'Name,Roll,Attendance\n';
 
-        days.sort((a, b) => {
-          const [da, ma, ya] = a.split('/');
-          const [db, mb, yb] = b.split('/');
-          return new Date(`${ya}-${ma}-${da}`) - new Date(`${yb}-${mb}-${db}`);
-        });
+      data.forEach(student => {
+        const name = student.name;
+        const roll = student.roll;
+        const attendance = student.attendance.join(', ');
+        html += `<tr><td>${name}</td><td>${roll}</td><td>${attendance}</td></tr>`;
+        csv += `${name},${roll},${attendance}\n`;
+      });
 
-        let html = '<table><tr><th>Roll</th><th>Name</th>';
-        days.forEach(d => html += `<th>${d}</th>`);
-        html += '</tr>';
+      html += '</table>';
+      document.getElementById('reportSection').innerHTML = html;
+      document.getElementById('exportButtons').style.display = 'flex';
+      currentTableHTML = html;
+      currentCSV = csv;
+    }
 
-        let csv = 'Roll,Name,' + days.join(',') + '\n';
+    function downloadCSV() {
+      const blob = new Blob([currentCSV], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'attendance.csv';
+      a.click();
+    }
 
-        data.forEach(r => {
-          html += `<tr><td>${r.roll}</td><td>${r.name}</td>`;
-          csv += `${r.roll},${r.name}`;
-          days.forEach(day => {
-            const val = r.attendance?.[day] || '';
-            html += `<td>${val}</td>`;
-            csv += `,${val}`;
-          });
-          html += '</tr>';
-          csv += '\n';
-        });
-
-        html += '</table>';
-        currentTableHTML = html;
+    function downloadPDF() {
+      const w = window.open();
+      w.document.write(`<html><head><title>Report</title></head><body>${currentTableHTML}</body></html>`);
+      w.print();
+    }
+  </script>
+</body>
+</html>
