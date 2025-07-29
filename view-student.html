@@ -1,516 +1,232 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Attendance Report</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>View Students</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(90deg, #74ebd5, #acb6e5);
-      padding: 20px;
       margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #74ebd5, #acb6e5);
+      color: #333;
     }
-    h2 {
-      text-align: center;
-      color: #0f172a;
-    }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    label, select, input, button {
-      display: block;
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 8px;
-    }
-    button {
-      background: #4338ca;
+
+    header {
+      background-color: #4338ca;
       color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .nav-buttons button {
+      background: rgba(66, 190, 62, 0.856);
+      color: #07090a;
       border: none;
-      border-radius: 5px;
-      font-size: 16px;
+      padding: 6px 12px;
+      margin-left: 8px;
+      border-radius: 4px;
+      font-weight: bold;
       cursor: pointer;
+      transition: 0.2s;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+
+    .nav-buttons button:hover {
+      background: #e0ecff;
     }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
-      text-align: center;
-    }
-    .hidden { display: none; }
-    .report-options {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .report-options button {
-      flex: 1;
-      background: #e2e8f0;
-      color: #1e293b;
-    }
-    .report-options button.active {
-      background: #4338ca;
-      color: white;
-    }
-    #reportSection {
-      overflow-x: auto;
-      margin-top: 20px;
-    }
-    #reportSection table {
-      min-width: 600px;
-    }
+
     .container {
-      max-width: 90vw;
+      padding: 20px;
     }
-    .student-report-options {
+
+    label {
+      font-weight: bold;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 20px;
+      font-size: 16px;
+      border: 1px solid #98ccaf;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    #studentList {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .student-card {
+      background: white;
       display: flex;
-      gap: 10px;
-      margin-top: 10px;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease;
     }
-    .student-report-options button {
-      flex: 1;
-      background: #e2e8f0;
-      color: #1e293b;
+
+    .student-card:hover {
+      transform: scale(1.01);
     }
-    .student-report-options button.active {
-      background: #4338ca;
+
+    .avatar {
+      background: #007bff;
       color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 15px;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .student-details {
+      font-size: 16px;
+    }
+
+    .no-students {
+      text-align: center;
+      color: #888;
+      padding: 20px;
+      font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+      header h2 {
+        font-size: 18px;
+      }
+
+      .nav-buttons button {
+        padding: 5px 10px;
+        font-size: 14px;
+      }
+
+      .avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #bbb;
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #999;
     }
   </style>
 </head>
 <body>
+
+  <header>
+    <h2>📋 View Students</h2>
+    <div class="nav-buttons">
+      <button onclick="window.location.href='index.html'">🏠 Home</button>
+      
+    </div>
+  </header>
+
   <div class="container">
-    <h2>Attendance Report</h2>
+    <label for="classSelect">Select Class:</label>
+    <select id="classSelect">
+      <option disabled selected>Loading classes...</option>
+    </select>
 
-    <div class="report-options">
-      <button id="dailyBtn" class="active">Daily Report</button>
-      <button id="monthlyBtn">Monthly Report</button>
-      <button id="studentBtn">Student Report</button>
-    </div>
-
-    <label for="classSelect">Select Class</label>
-    <select id="classSelect"><option>Loading...</option></select>
-
-    <div id="dailyFields">
-      <label for="date">Select Date</label>
-      <input type="date" id="date">
-    </div>
-
-    <div id="monthlyFields" class="hidden">
-      <label for="month">Select Month</label>
-      <input type="month" id="month" />
-    </div>
-
-    <div id="studentFields" class="hidden">
-      <label for="studentSelect">Select Student</label>
-      <select id="studentSelect" disabled><option>Select class first</option></select>
-      
-      <div class="student-report-options">
-        <button id="weeklyViewBtn" class="active">Weekly View</button>
-        <button id="monthlyViewBtn">Monthly View</button>
-      </div>
-      
-      <label for="studentDateRange">Select Week</label>
-      <input type="week" id="studentWeek" class="student-date-input">
-      
-      <label for="studentMonth" class="hidden">Select Month</label>
-      <input type="month" id="studentMonth" class="student-date-input hidden">
-    </div>
-
-    <button id="btnFetch">Get Report</button>
-
-    <!-- Student filter -->
-    <input type="text" id="nameFilter" placeholder="Filter by student name..." style="display:none;">
-
-    <!-- Export buttons -->
-    <div id="exportButtons" style="margin-top:10px; display:none; gap:10px;">
-      <button id="btnPDF">📄 Download PDF</button>
-      <button id="btnCSV">📁 Download CSV</button>
-    </div>
-
-    <div id="reportSection"></div>
+    <ul id="studentList"></ul>
   </div>
 
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec';
-    let reportType = 'daily';
-    let studentViewType = 'weekly';
-    let currentTableHTML = '';
-    let currentCSV = '';
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
+    const classSelect = document.getElementById("classSelect");
+    const studentList = document.getElementById("studentList");
 
-    // Toggle buttons behavior
-    document.getElementById('dailyBtn').addEventListener('click', () => toggleType('daily'));
-    document.getElementById('monthlyBtn').addEventListener('click', () => toggleType('monthly'));
-    document.getElementById('studentBtn').addEventListener('click', () => toggleType('student'));
-    
-    document.getElementById('weeklyViewBtn').addEventListener('click', () => toggleStudentView('weekly'));
-    document.getElementById('monthlyViewBtn').addEventListener('click', () => toggleStudentView('monthly'));
-    
-    function toggleStudentView(type) {
-      studentViewType = type;
-      document.getElementById('weeklyViewBtn').classList.toggle('active', type==='weekly');
-      document.getElementById('monthlyViewBtn').classList.toggle('active', type!=='weekly');
-      document.getElementById('studentWeek').classList.toggle('hidden', type!=='weekly');
-      document.getElementById('studentMonth').classList.toggle('hidden', type==='weekly');
-      document.querySelector('label[for="studentDateRange"]').classList.toggle('hidden', type!=='weekly');
-      document.querySelector('label[for="studentMonth"]').classList.toggle('hidden', type==='weekly');
+    const classes = ["Class_1A", "Class_1B", "Class_2A","Class_2B", "Class_3A", "Class_3B","Class_4A", "Class_4B", "Class_5A","Class_5B", "Class_6A", "Class_6B"];
+
+    function loadClasses() {
+      classSelect.innerHTML = "";
+      const defaultOpt = document.createElement("option");
+      defaultOpt.disabled = true;
+      defaultOpt.selected = true;
+      defaultOpt.textContent = "Select a class";
+      classSelect.appendChild(defaultOpt);
+
+      classes.forEach(cls => {
+        const opt = document.createElement("option");
+        opt.value = cls;
+        opt.textContent = cls;
+        classSelect.appendChild(opt);
+      });
     }
 
-    function toggleType(type) {
-      reportType = type;
-      document.getElementById('dailyBtn').classList.toggle('active', type==='daily');
-      document.getElementById('monthlyBtn').classList.toggle('active', type==='monthly');
-      document.getElementById('studentBtn').classList.toggle('active', type==='student');
-      
-      document.getElementById('dailyFields').classList.toggle('hidden', type!=='daily');
-      document.getElementById('monthlyFields').classList.toggle('hidden', type!=='monthly');
-      document.getElementById('studentFields').classList.toggle('hidden', type!=='student');
-      
-      document.getElementById('nameFilter').style.display = type === 'student' ? 'none' : 'none';
-      document.getElementById('exportButtons').style.display = 'none';
-      document.getElementById('reportSection').innerHTML = '';
-    }
+    let allStudents = [];
 
-    // Load classes
-    async function loadClasses(){
-      try {
-        const res = await fetch(scriptURL + '?action=getClassList');
-        const list = await res.json();
-        const sel = document.getElementById('classSelect');
-        sel.innerHTML = '<option value="">-- Select Class --</option>';
-        list.forEach(c => sel.add(new Option(c, c)));
-      } catch(e) {
-        console.error(e);
-        alert('Failed to load classes');
-      }
-    }
-    loadClasses();
-
-    // Load students when class is selected
-    document.getElementById('classSelect').addEventListener('change', async function() {
-      if (reportType !== 'student') return;
-      
-      const cls = this.value;
-      if (!cls) {
-        document.getElementById('studentSelect').innerHTML = '<option>Select class first</option>';
-        document.getElementById('studentSelect').disabled = true;
-        return;
-      }
-      
-      try {
-        document.getElementById('studentSelect').innerHTML = '<option>Loading students...</option>';
-        const res = await fetch(scriptURL + `?action=getStudentList&className=${encodeURIComponent(cls)}`);
-        const students = await res.json();
-        
-        const sel = document.getElementById('studentSelect');
-        sel.innerHTML = '<option value="">-- Select Student --</option>';
-        students.forEach(s => sel.add(new Option(`${s.roll} - ${s.name}`, s.roll)));
-        sel.disabled = false;
-      } catch(e) {
-        console.error(e);
-        document.getElementById('studentSelect').innerHTML = '<option>Error loading students</option>';
-      }
+    classSelect.addEventListener("change", () => {
+      loadStudents(classSelect.value);
     });
 
-    document.getElementById('btnFetch').addEventListener('click', fetchReport);
-    document.getElementById('nameFilter').addEventListener('input', filterNames);
-
-    document.getElementById('btnCSV').addEventListener('click', downloadCSV);
-    document.getElementById('btnPDF').addEventListener('click', downloadPDF);
-
-    async function fetchReport() {
-      if (reportType === 'student') {
-        await fetchStudentReport();
-        return;
-      }
-      
-      const cls = document.getElementById('classSelect').value;
-      if (!cls) return alert('Please select a class.');
-      
-      const dateInput = reportType === 'daily' ? document.getElementById('date').value :
-                      document.getElementById('month').value;
-      if (!dateInput) return alert('Please select date/month.');
-
-      document.getElementById('reportSection').innerText = 'Loading...';
-
-      let url = scriptURL + `?action=getAttendanceReport&className=${encodeURIComponent(cls)}`;
-      
-      if (reportType === 'daily') {
-        const dObj = new Date(dateInput);
-        const day = String(dObj.getDate()).padStart(2, '0');
-        const month = String(dObj.getMonth() + 1).padStart(2, '0');
-        const d = `${day}/${month}/${dObj.getFullYear()}`;
-        
-        url += `&date=${encodeURIComponent(d)}`;
-      } else {
-        const [y, m] = dateInput.split('-');
-        url += `&month=${m}&year=${y}`;
-      }
-
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (!data || data.length === 0) {
-          document.getElementById('reportSection').innerHTML = '<p>No data found.</p>';
-          document.getElementById('exportButtons').style.display = 'none';
-          return;
-        }
-
-        buildTable(data);
-      } catch (error) {
-        console.error('Error fetching report:', error);
-        document.getElementById('reportSection').innerHTML = '<p>Attendance for this day hasn\'t been marked yet.</p>';
-      }
-    }
-
-    async function fetchStudentReport() {
-      const cls = document.getElementById('classSelect').value;
-      const studentRoll = document.getElementById('studentSelect').value;
-      
-      if (!cls) return alert('Please select a class.');
-      if (!studentRoll) return alert('Please select a student.');
-      
-      let dateInput, startDate, endDate;
-      
-      if (studentViewType === 'weekly') {
-        dateInput = document.getElementById('studentWeek').value;
-        if (!dateInput) return alert('Please select a week.');
-        
-        // Calculate start and end dates of the week
-        const year = dateInput.substring(0, 4);
-        const weekNum = dateInput.substring(6);
-        const firstDay = new Date(year, 0, 1);
-        const daysOffset = firstDay.getDay() > 4 ? 7 - firstDay.getDay() : -firstDay.getDay();
-        const firstMonday = new Date(firstDay.setDate(firstDay.getDate() + daysOffset));
-        const targetWeek = new Date(firstMonday.setDate(firstMonday.getDate() + (weekNum - 1) * 7));
-        
-        startDate = new Date(targetWeek);
-        endDate = new Date(targetWeek);
-        endDate.setDate(endDate.getDate() + 6);
-      } else {
-        dateInput = document.getElementById('studentMonth').value;
-        if (!dateInput) return alert('Please select a month.');
-        
-        const [year, month] = dateInput.split('-');
-        startDate = new Date(year, month - 1, 1);
-        endDate = new Date(year, month, 0);
-      }
-      
-      document.getElementById('reportSection').innerText = 'Loading...';
-      
-      try {
-        // Format dates as dd/mm/yyyy
-        const formatDate = (date) => {
-          const day = String(date.getDate()).padStart(2, '0');
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          return `${day}/${month}/${date.getFullYear()}`;
-        };
-        
-        const startDateStr = formatDate(startDate);
-        const endDateStr = formatDate(endDate);
-        
-        const url = scriptURL + 
-          `?action=getStudentAttendanceReport` +
-          `&className=${encodeURIComponent(cls)}` +
-          `&roll=${encodeURIComponent(studentRoll)}` +
-          `&startDate=${encodeURIComponent(startDateStr)}` +
-          `&endDate=${encodeURIComponent(endDateStr)}`;
-        
-        const res = await fetch(url);
-        const data = await res.json();
-        
-        if (!data || !data.attendance) {
-          document.getElementById('reportSection').innerHTML = '<p>No attendance data found for this student.</p>';
-          document.getElementById('exportButtons').style.display = 'none';
-          return;
-        }
-        
-        buildStudentTable(data);
-      } catch (error) {
-        console.error('Error fetching student report:', error);
-        document.getElementById('reportSection').innerHTML = '<p>Error loading student attendance data.</p>';
-      }
-    }
-
-    function buildStudentTable(studentData) {
-      // Sort dates chronologically
-      const dates = Object.keys(studentData.attendance).sort((a, b) => {
-        const [da, ma, ya] = a.split('/');
-        const [db, mb, yb] = b.split('/');
-        return new Date(`${ya}-${ma}-${da}`) - new Date(`${yb}-${mb}-${db}`);
-      });
-      
-      let html = `
-        <div style="margin-bottom: 20px;">
-          <h3 style="margin: 0;">${studentData.name} (Roll: ${studentData.roll})</h3>
-          <p style="margin: 5px 0 0 0; color: #555;">${dates.length} attendance records found</p>
-        </div>
-        <table>
-          <tr>
-            <th>Date</th>
-            <th>Status</th>
-          </tr>
-      `;
-      
-      let csv = `Student Name,${studentData.name}\nRoll Number,${studentData.roll}\n\nDate,Status\n`;
-      
-      dates.forEach(date => {
-        const status = studentData.attendance[date];
-        html += `<tr><td>${date}</td><td>${status}</td></tr>`;
-        csv += `${date},${status}\n`;
-      });
-      
-      html += '</table>';
-      currentTableHTML = html;
-      currentCSV = csv;
-      
-      const rs = document.getElementById('reportSection');
-      rs.innerHTML = currentTableHTML;
-      document.getElementById('exportButtons').style.display = 'flex';
-    }
-
-    function buildTable(data) {
-      if (reportType === 'monthly') {
-        const days = Object.keys(data[0].attendance || {});
-        if (days.length === 0) {
-          document.getElementById('reportSection').innerHTML = '<p>No attendance has been marked yet for this month.</p>';
-          document.getElementById('exportButtons').style.display = 'none';
-          return;
-        }
-
-        days.sort((a,b) => {
-          const [da, ma, ya] = a.split('/');
-          const [db, mb, yb] = b.split('/');
-          return new Date(`${ya}-${ma}-${da}`) - new Date(`${yb}-${mb}-${db}`);
+    function loadStudents(className) {
+      studentList.innerHTML = "<li class='no-students'>Loading...</li>";
+      fetch(`${webAppUrl}?action=getStudents&className=${className}`)
+        .then(res => res.json())
+        .then(data => {
+          allStudents = data;
+          if (data.length === 0) {
+            studentList.innerHTML = "<li class='no-students'>No students found.</li>";
+          } else {
+            renderStudents(data);
+          }
+        })
+        .catch(err => {
+          console.error("Error:", err);
+          studentList.innerHTML = "<li class='no-students'>Failed to load students.</li>";
         });
-
-        let html = '<table><tr><th>Roll</th><th>Name</th>';
-        days.forEach(d => html += `<th>${d}</th>`);
-        html += '</tr>';
-
-        let csv = 'Roll,Name,' + days.join(',') + '\n';
-
-        data.forEach(r => {
-          html += `<tr><td>${r.roll}</td><td>${r.name}</td>`;
-          csv += `${r.roll},${r.name}`;
-          days.forEach(day => {
-            const val = r.attendance?.[day] || '';
-            html += `<td>${val}</td>`;
-            csv += `,${val}`;
-          });
-          html += '</tr>';
-          csv += '\n';
-        });
-
-        html += '</table>';
-        currentTableHTML = html;
-        currentCSV = csv;
-
-      } else {
-        // daily report
-        let html = '<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>';
-        let csv = 'Roll,Name,Status\n';
-        data.forEach(r => {
-          html += `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.status}</td></tr>`;
-          csv += `${r.roll},${r.name},${r.status}\n`;
-        });
-        html += '</table>';
-        currentTableHTML = html;
-        currentCSV = csv;
-      }
-
-      const rs = document.getElementById('reportSection');
-      rs.innerHTML = currentTableHTML;
-      document.getElementById('nameFilter').style.display = reportType === 'student' ? 'none' : '';
-      document.getElementById('exportButtons').style.display = 'flex';
     }
 
-    function filterNames(){
-      const term = this.value.toLowerCase();
-      const rows = document.querySelectorAll('#reportSection table tr');
-      rows.forEach((tr,i)=> {
-        if (i===0) return;
-        tr.style.display = tr.children[1].textContent.toLowerCase().includes(term) ? '' : 'none';
+    function renderStudents(data) {
+      studentList.innerHTML = "";
+      data.forEach(s => {
+        const li = document.createElement("li");
+        li.className = "student-card";
+
+        ///const avatar = document.createElement("div");
+        ///avatar.className = "avatar";
+        ///avatar.textContent = (s.name[0] || "?").toUpperCase();
+
+        const details = document.createElement("div");
+        details.className = "student-details";
+        details.textContent = `${s.roll} - ${s.name}`;
+
+        ///li.appendChild(avatar);
+        li.appendChild(details);
+        studentList.appendChild(li);
       });
     }
 
-    function downloadCSV() {
-      const schoolName = "SDN Bandungrejosari 3 Malang";
-      const className = document.getElementById("classSelect")?.value || "Unknown";
-
-      const teacherMap = {
-        "Class_1A": "Ms. FARIDA HARIANI",
-        "Class_1B": "Ms. INE AYU KUSUMAH DEWI",
-        "Class_2A": "Ms. NADIA ROFIKA",
-        "Class_2B": "Mr. WIMBI DAMARA PUTRA",
-        "Class_3A": "Ms. WATINI",
-        "Class_3B": "Ms. KRISTIN KARTIKAWATI",
-        "Class_4A": "Ms. HARTATI PUSPITA DININGRUM",
-        "Class_4B": "Ms. Agustina Putri Setia Mardika",
-        "Class_5A": "Ms. PRIMA EKA SARI",
-        "Class_5B": "Ms. MU'AWANAH",
-        "Class_6A": "Ms. AULINA MAGHFIROH",
-        "Class_6B": "Mr. HERMIN SUSWAT",
-      };
-
-      const teacherName = teacherMap[className] || "Unknown";
-      const today = new Date().toLocaleDateString('id-ID');
-
-      const headerCSV = `School Name:,${schoolName}\nClass:,${className.replace("_", " ")}\nTeacher:,${teacherName}\nReport Date:,${today}\n\n`;
-      const fullCSV = headerCSV + currentCSV;
-
-      const blob = new Blob([fullCSV], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'attendance.csv';
-      a.click();
-    }
-
-    function downloadPDF() {
-      const schoolName = "SDN Bandungrejosari 3 Malang";
-      const className = document.getElementById("classSelect")?.value || "Unknown";
-
-      const teacherMap = {
-        "Class_1A": "Ms. FARIDA HARIANI",
-        "Class_1B": "Ms. INE AYU KUSUMAH DEWI",
-        "Class_2A": "Ms. NADIA ROFIKA",
-        "Class_2B": "Mr. WIMBI DAMARA PUTRA",
-        "Class_3A": "Ms. WATINI",
-        "Class_3B": "Ms. KRISTIN KARTIKAWATI",
-        "Class_4A": "Ms. HARTATI PUSPITA DININGRUM",
-        "Class_4B": "Ms. Agustina Putri Setia Mardika",
-        "Class_5A": "Ms. PRIMA EKA SARI",
-        "Class_5B": "Ms. MU'AWANAH",
-        "Class_6A": "Ms. AULINA MAGHFIROH",
-        "Class_6B": "Mr. HERMIN SUSWAT",
-      };
-
-      const teacherName = teacherMap[className] || "Unknown";
-
-      const headerHTML = `
-        <div style="text-align:center; margin-bottom:20px;">
-          <h2 style="margin:0; color:#d62828;">${schoolName}</h2>
-          <p style="margin:0; font-size:16px;">Class: ${className.replace("_", " ")}</p>
-          <p style="margin:0; font-size:16px;">Teacher: ${teacherName}</p>
-          <hr style="margin-top:10px;">
-        </div>
-      `;
-
-      const w = window.open();
-      w.document.write(`<html><head><title>Attendance Report</title></head><body>${headerHTML}${currentTableHTML}</body></html>`);
-      w.print();
-    }
+    loadClasses();
   </script>
 </body>
 </html>
