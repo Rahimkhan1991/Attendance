@@ -81,9 +81,11 @@
     <h2>Attendance Report</h2>
 
     <div class="report-options">
-      <button id="dailyBtn" class="active">Daily Report</button>
-      <button id="monthlyBtn">Monthly Report</button>
-    </div>
+  <button id="dailyBtn" class="active">Daily Report</button>
+  <button id="monthlyBtn">Monthly Report</button>
+  <button id="studentBtn">Student Report</button>
+</div>
+
 
     <label for="classSelect">Select Class</label>
     <select id="classSelect"><option>Loading...</option></select>
@@ -94,6 +96,11 @@
     </div>
 
     <div id="monthlyFields" class="hidden">
+      <div id="studentFields" class="hidden">
+  <label for="studentName">Enter Student Name</label>
+  <input type="text" id="studentName" placeholder="e.g., Aulia Fitriani" />
+</div>
+
       <label for="month">Select Month</label>
       <input type="month" id="month" />
     </div>
@@ -121,16 +128,24 @@
     // Toggle buttons behavior
     document.getElementById('dailyBtn').addEventListener('click', () => toggleType('daily'));
     document.getElementById('monthlyBtn').addEventListener('click', () => toggleType('monthly'));
-    function toggleType(type) {
-      reportType = type;
-      document.getElementById('dailyBtn').classList.toggle('active', type==='daily');
-      document.getElementById('monthlyBtn').classList.toggle('active', type!=='daily');
-      document.getElementById('dailyFields').classList.toggle('hidden', type!=='daily');
-      document.getElementById('monthlyFields').classList.toggle('hidden', type==='daily');
-      document.getElementById('nameFilter').style.display = 'none';
-      document.getElementById('exportButtons').style.display = 'none';
-      reportSection.innerHTML = '';
-    }
+    document.getElementById('studentBtn').addEventListener('click', () => toggleType('student'));
+
+
+function toggleType(type) {
+  reportType = type;
+  document.getElementById('dailyBtn').classList.toggle('active', type === 'daily');
+  document.getElementById('monthlyBtn').classList.toggle('active', type === 'monthly');
+  document.getElementById('studentBtn').classList.toggle('active', type === 'student');
+
+  document.getElementById('dailyFields').classList.toggle('hidden', type !== 'daily');
+  document.getElementById('monthlyFields').classList.toggle('hidden', type !== 'monthly');
+  document.getElementById('studentFields').classList.toggle('hidden', type !== 'student');
+
+  document.getElementById('nameFilter').style.display = 'none';
+  document.getElementById('exportButtons').style.display = 'none';
+  reportSection.innerHTML = '';
+}
+
 
     // Load classes
     async function loadClasses(){
@@ -156,14 +171,37 @@
 async function fetchReport() {
   const cls = document.getElementById('classSelect').value;
   if (!cls) return alert('Please select a class.');
-  
-  const dateInput = reportType === 'daily' ? document.getElementById('date').value :
-                   document.getElementById('month').value;
-  if (!dateInput) return alert('Please select date/month.');
+let dateInput = '';
+if (reportType === 'daily') {
+  dateInput = document.getElementById('date').value;
+  if (!dateInput) return alert('Please select a date.');
+} else if (reportType === 'monthly') {
+  dateInput = document.getElementById('month').value;
+  if (!dateInput) return alert('Please select a month.');
+} else if (reportType === 'student') {
+  const studentName = document.getElementById('studentName').value.trim();
+  if (!studentName) return alert('Please enter student name.');
+}
+
 
   document.getElementById('reportSection').innerText = 'Loading...';
 
-  let url = scriptURL + `?action=getAttendanceReport&className=${encodeURIComponent(cls)}`;
+let url = '';
+if (reportType === 'daily') {
+  url = scriptURL + `?action=getAttendanceReport&className=${encodeURIComponent(cls)}`;
+  const dObj = new Date(dateInput);
+  const day = String(dObj.getDate()).padStart(2, '0');
+  const month = String(dObj.getMonth() + 1).padStart(2, '0');
+  const d = `${day}/${month}/${dObj.getFullYear()}`;
+  url += `&date=${encodeURIComponent(d)}`;
+} else if (reportType === 'monthly') {
+  const [y, m] = dateInput.split('-');
+  url = scriptURL + `?action=getAttendanceReport&className=${encodeURIComponent(cls)}&month=${m}&year=${y}`;
+} else if (reportType === 'student') {
+  const studentName = document.getElementById('studentName').value.trim();
+  url = scriptURL + `?action=getStudentReport&studentName=${encodeURIComponent(studentName)}`;
+}
+
   
   if (reportType === 'daily') {
     const dObj = new Date(dateInput);
@@ -173,7 +211,19 @@ async function fetchReport() {
     const d = `${day}/${month}/${dObj.getFullYear()}`;
     
     url += `&date=${encodeURIComponent(d)}`;
-  } else {
+ } else if (reportType === 'student') {
+  let html = '<table><tr><th>Date</th><th>Status</th></tr>';
+  let csv = 'Date,Status\n';
+  data.forEach(r => {
+    html += `<tr><td>${r.date}</td><td>${r.status}</td></tr>`;
+    csv += `${r.date},${r.status}\n`;
+  });
+  html += '</table>';
+  currentTableHTML = html;
+  currentCSV = csv;
+}
+else {
+
     const [y, m] = dateInput.split('-');
     url += `&month=${m}&year=${y}`;
   }
