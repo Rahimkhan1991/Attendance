@@ -86,6 +86,13 @@
       background: #4338ca;
       color: white;
     }
+    .error-message {
+      color: #d32f2f;
+      padding: 10px;
+      background: #ffebee;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -120,7 +127,7 @@
         <button id="monthlyViewBtn">Monthly View</button>
       </div>
       
-      <label for="studentDateRange">Select Week</label>
+      <label for="studentWeek">Select Week</label>
       <input type="week" id="studentWeek" class="student-date-input">
       
       <label for="studentMonth" class="hidden">Select Month</label>
@@ -162,7 +169,7 @@
       document.getElementById('monthlyViewBtn').classList.toggle('active', type!=='weekly');
       document.getElementById('studentWeek').classList.toggle('hidden', type!=='weekly');
       document.getElementById('studentMonth').classList.toggle('hidden', type==='weekly');
-      document.querySelector('label[for="studentDateRange"]').classList.toggle('hidden', type!=='weekly');
+      document.querySelector('label[for="studentWeek"]').classList.toggle('hidden', type!=='weekly');
       document.querySelector('label[for="studentMonth"]').classList.toggle('hidden', type==='weekly');
     }
 
@@ -186,12 +193,18 @@
       try {
         const res = await fetch(scriptURL + '?action=getClassList');
         const list = await res.json();
+        
+        // Check if the response is an array
+        if (!Array.isArray(list)) {
+          throw new Error('Invalid class list format');
+        }
+        
         const sel = document.getElementById('classSelect');
         sel.innerHTML = '<option value="">-- Select Class --</option>';
         list.forEach(c => sel.add(new Option(c, c)));
       } catch(e) {
-        console.error(e);
-        alert('Failed to load classes');
+        console.error('Error loading classes:', e);
+        document.getElementById('classSelect').innerHTML = '<option value="">Error loading classes</option>';
       }
     }
     loadClasses();
@@ -212,12 +225,21 @@
         const res = await fetch(scriptURL + `?action=getStudentList&className=${encodeURIComponent(cls)}`);
         const students = await res.json();
         
+        // Check if the response is an array
+        if (!Array.isArray(students)) {
+          throw new Error('Invalid student list format');
+        }
+        
         const sel = document.getElementById('studentSelect');
         sel.innerHTML = '<option value="">-- Select Student --</option>';
-        students.forEach(s => sel.add(new Option(`${s.roll} - ${s.name}`, s.roll)));
+        students.forEach(s => {
+          if (s.roll && s.name) {
+            sel.add(new Option(`${s.roll} - ${s.name}`, s.roll));
+          }
+        });
         sel.disabled = false;
       } catch(e) {
-        console.error(e);
+        console.error('Error loading students:', e);
         document.getElementById('studentSelect').innerHTML = '<option>Error loading students</option>';
       }
     });
@@ -261,8 +283,13 @@
         const res = await fetch(url);
         const data = await res.json();
 
-        if (!data || data.length === 0) {
-          document.getElementById('reportSection').innerHTML = '<p>No data found.</p>';
+        // Check if data is in expected format
+        if (!data || !Array.isArray(data)) {
+          throw new Error('Invalid data format received');
+        }
+
+        if (data.length === 0) {
+          document.getElementById('reportSection').innerHTML = '<p class="error-message">No attendance data found for the selected criteria.</p>';
           document.getElementById('exportButtons').style.display = 'none';
           return;
         }
@@ -270,7 +297,12 @@
         buildTable(data);
       } catch (error) {
         console.error('Error fetching report:', error);
-        document.getElementById('reportSection').innerHTML = '<p>Attendance for this day hasn\'t been marked yet.</p>';
+        document.getElementById('reportSection').innerHTML = `
+          <p class="error-message">
+            Error loading attendance data. Please try again.<br>
+            ${error.message || ''}
+          </p>
+        `;
       }
     }
 
@@ -330,8 +362,12 @@
         const res = await fetch(url);
         const data = await res.json();
         
-        if (!data || !data.attendance) {
-          document.getElementById('reportSection').innerHTML = '<p>No attendance data found for this student.</p>';
+        if (!data || typeof data !== 'object') {
+          throw new Error('Invalid student data format');
+        }
+
+        if (!data.attendance || Object.keys(data.attendance).length === 0) {
+          document.getElementById('reportSection').innerHTML = '<p class="error-message">No attendance records found for this student during the selected period.</p>';
           document.getElementById('exportButtons').style.display = 'none';
           return;
         }
@@ -339,11 +375,22 @@
         buildStudentTable(data);
       } catch (error) {
         console.error('Error fetching student report:', error);
-        document.getElementById('reportSection').innerHTML = '<p>Error loading student attendance data.</p>';
+        document.getElementById('reportSection').innerHTML = `
+          <p class="error-message">
+            Error loading student attendance data.<br>
+            ${error.message || ''}
+          </p>
+        `;
       }
     }
 
     function buildStudentTable(studentData) {
+      // Check if we have valid attendance data
+      if (!studentData.attendance || typeof studentData.attendance !== 'object') {
+        document.getElementById('reportSection').innerHTML = '<p class="error-message">Invalid attendance data format</p>';
+        return;
+      }
+
       // Sort dates chronologically
       const dates = Object.keys(studentData.attendance).sort((a, b) => {
         const [da, ma, ya] = a.split('/');
@@ -353,7 +400,7 @@
       
       let html = `
         <div style="margin-bottom: 20px;">
-          <h3 style="margin: 0;">${studentData.name} (Roll: ${studentData.roll})</h3>
+          <h3 style="margin: 0;">${studentData.name || 'Unknown'} (Roll: ${studentData.roll || 'N/A'})</h3>
           <p style="margin: 5px 0 0 0; color: #555;">${dates.length} attendance records found</p>
         </div>
         <table>
@@ -363,10 +410,10 @@
           </tr>
       `;
       
-      let csv = `Student Name,${studentData.name}\nRoll Number,${studentData.roll}\n\nDate,Status\n`;
+      let csv = `Student Name,${studentData.name || 'Unknown'}\nRoll Number,${studentData.roll || 'N/A'}\n\nDate,Status\n`;
       
       dates.forEach(date => {
-        const status = studentData.attendance[date];
+        const status = studentData.attendance[date] || 'N/A';
         html += `<tr><td>${date}</td><td>${status}</td></tr>`;
         csv += `${date},${status}\n`;
       });
@@ -381,14 +428,21 @@
     }
 
     function buildTable(data) {
+      // First check if data is an array
+      if (!Array.isArray(data)) {
+        document.getElementById('reportSection').innerHTML = '<p class="error-message">Invalid data format received</p>';
+        return;
+      }
+
       if (reportType === 'monthly') {
-        const days = Object.keys(data[0].attendance || {});
-        if (days.length === 0) {
-          document.getElementById('reportSection').innerHTML = '<p>No attendance has been marked yet for this month.</p>';
+        // Check if the first item has attendance data
+        if (data.length === 0 || !data[0].attendance || typeof data[0].attendance !== 'object') {
+          document.getElementById('reportSection').innerHTML = '<p class="error-message">No attendance has been marked yet for this month.</p>';
           document.getElementById('exportButtons').style.display = 'none';
           return;
         }
 
+        const days = Object.keys(data[0].attendance);
         days.sort((a,b) => {
           const [da, ma, ya] = a.split('/');
           const [db, mb, yb] = b.split('/');
@@ -402,8 +456,8 @@
         let csv = 'Roll,Name,' + days.join(',') + '\n';
 
         data.forEach(r => {
-          html += `<tr><td>${r.roll}</td><td>${r.name}</td>`;
-          csv += `${r.roll},${r.name}`;
+          html += `<tr><td>${r.roll || ''}</td><td>${r.name || ''}</td>`;
+          csv += `${r.roll || ''},${r.name || ''}`;
           days.forEach(day => {
             const val = r.attendance?.[day] || '';
             html += `<td>${val}</td>`;
@@ -422,8 +476,8 @@
         let html = '<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>';
         let csv = 'Roll,Name,Status\n';
         data.forEach(r => {
-          html += `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.status}</td></tr>`;
-          csv += `${r.roll},${r.name},${r.status}\n`;
+          html += `<tr><td>${r.roll || ''}</td><td>${r.name || ''}</td><td>${r.status || ''}</td></tr>`;
+          csv += `${r.roll || ''},${r.name || ''},${r.status || ''}\n`;
         });
         html += '</table>';
         currentTableHTML = html;
@@ -441,7 +495,10 @@
       const rows = document.querySelectorAll('#reportSection table tr');
       rows.forEach((tr,i)=> {
         if (i===0) return;
-        tr.style.display = tr.children[1].textContent.toLowerCase().includes(term) ? '' : 'none';
+        const nameCell = tr.children[1];
+        if (nameCell) {
+          tr.style.display = nameCell.textContent.toLowerCase().includes(term) ? '' : 'none';
+        }
       });
     }
 
