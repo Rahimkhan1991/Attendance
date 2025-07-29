@@ -275,6 +275,54 @@ async function fetchReport() {
       w.document.write(`<html><head><title>Report</title></head><body>${currentTableHTML}</body></html>`);
       w.print();
     }
+    function downloadPDF() {
+  const totalStudents = data.length;
+  const presentCount = data.filter(r => r.attendance?.some(day => day === 'Hadir')).length;
+  const izinCount = data.filter(r => r.attendance?.some(day => day === 'Izin')).length;
+  const sakitCount = data.filter(r => r.attendance?.some(day => day === 'Sakit')).length;
+  const alfaCount = data.filter(r => r.attendance?.some(day => day === 'Alfa')).length;
+
+  const schoolName = 'ABC High School';  // Replace with dynamic value if needed
+  const className = document.getElementById('classSelect').value;
+  const classTeacherName = 'Mr. John Doe';  // Replace with dynamic value if needed
+  const reportDate = new Date().toLocaleDateString();
+
+  let reportHTML = `
+    <h2>${schoolName}</h2>
+    <h3>Class: ${className}</h3>
+    <p>Teacher: ${classTeacherName}</p>
+    <p>Date: ${reportDate}</p>
+    <p>Total Students: ${totalStudents}, Present: ${presentCount}, Izin: ${izinCount}, Sakit: ${sakitCount}, Alfa: ${alfaCount}</p>
+    <hr />
+    <h4>Attendance Report</h4>
+  `;
+
+  // Add the attendance table to the PDF content
+  reportHTML += currentTableHTML;
+
+  const w = window.open();
+  w.document.write(`
+    <html>
+      <head>
+        <title>Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; }
+          h2 { text-align: center; }
+          h3, p { font-size: 16px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+          th { background-color: #f2f2f2; }
+        </style>
+      </head>
+      <body>
+        ${reportHTML}
+      </body>
+    </html>
+  `);
+  
+  w.print();  // Trigger the print dialog for the PDF
+}
+
   </script>
 </body>
 </html>
