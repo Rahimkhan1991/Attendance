@@ -270,28 +270,54 @@ async function fetchReport() {
       a.click();
     }
 
-    function downloadPDF(){
-      const schoolName = 'ABC High School';  // Replace with dynamic value if needed
-     const className = document.getElementById('classSelect').value;
-     const classTeacherName = 'Mr. John Doe';  // Replace with dynamic value if needed
-     const reportDate = new Date().toLocaleDateString();
+    
+function downloadPDF() {
+  const schoolName = "SDN Bandungrejosari 3 Malang";
+  const className = "Class 6B";
+  const teacherName = "Mr. Rahim";
 
-     let reportHTML = `
-        <h1>${s}</h1>
-        <h3>Class: ${className}</h3>
-        <p>Teacher: ${classTeacherName}</p>
-        <p>Date: ${reportDate}</p>
-        <hr />
-        <h4>Attendance Report</h4>
+  const headerHTML = `
+    <div style="text-align:center; margin-bottom:20px;">
+      <h2 style="margin: 0; color: #007bff;">${schoolName}</h2>
+      <p style="margin: 5px 0;"><strong>Class:</strong> ${className} | <strong>Teacher:</strong> ${teacherName}</p>
+      <hr style="border: 1px solid #007bff; margin-top: 10px;" />
+    </div>
   `;
 
-  // Add the attendance table to the PDF content
-  reportHTML += currentTableHTML;
-
-      const w = window.open();
-      w.document.write(`<html><head><title>Report</title></head><body>${currentTableHTML}</body></html>`);
-      w.print();
-    }
+  const w = window.open();
+  w.document.write(`
+    <html>
+      <head>
+        <title>Attendance Report</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+          }
+          th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+          }
+          th {
+            background-color: #f0f8ff;
+            color: #333;
+          }
+        </style>
+      </head>
+      <body>
+        ${headerHTML}
+        ${currentTableHTML}
+      </body>
+    </html>
+  `);
+  w.print();
+}
 
   </script>
 </body>
