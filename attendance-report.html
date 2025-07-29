@@ -273,7 +273,7 @@ async function fetchReport() {
   function downloadPDF() {
     const schoolName = "SDN Bandungrejosari 3 Malang";
     const className = document.getElementById('classSelect').value || "Class";
-    const teacherName = "Mr. Rahim";  // Static name as you wanted
+    const teacherName = document.getElementById('classSelect').value || "(teachername)";
 
     const headerHTML = '' +
       '<div style="text-align:center; margin-bottom:20px;">' +
