@@ -271,11 +271,24 @@ async function fetchReport() {
     }
 
     function downloadPDF(){
-      const w = window.open();
-      w.document.write(`<html><head><title>Report</title></head><body>${currentTableHTML}</body></html>`);
-      w.print();
-    }
-function downloadPDF(){
+      const schoolName = 'ABC High School';  // Replace with dynamic value if needed
+     const className = document.getElementById('classSelect').value;
+     const classTeacherName = 'Mr. John Doe';  // Replace with dynamic value if needed
+     const reportDate = new Date().toLocaleDateString();
+
+     let reportHTML = `
+        <h2>${schoolName}</h2>
+        <h3>Class: ${className}</h3>
+        <p>Teacher: ${classTeacherName}</p>
+        <p>Date: ${reportDate}</p>
+        <p>Total Students: ${totalStudents}, Present: ${presentCount}, Absent: ${absentCount}</p>
+        <hr />
+        <h4>Attendance Report</h4>
+  `;
+
+  // Add the attendance table to the PDF content
+  reportHTML += currentTableHTML;
+
       const w = window.open();
       w.document.write(`<html><head><title>Report</title></head><body>${currentTableHTML}</body></html>`);
       w.print();
