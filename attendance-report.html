@@ -261,14 +261,38 @@ async function fetchReport() {
         tr.style.display = tr.children[1].textContent.toLowerCase().includes(term) ? '' : 'none';
       });
     }
+function downloadCSV() {
+  const schoolName = "SDN Bandungrejosari 3 Malang";
+  const className = document.getElementById("classSelect")?.value || "Unknown";
 
-    function downloadCSV(){
-      const blob = new Blob([currentCSV],{type:'text/csv'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'attendance.csv';
-      a.click();
-    }
+  const teacherMap = {
+    "Class_1A": "Ms. FARIDA HARIANI",
+    "Class_1B": "Ms. INE AYU KUSUMAH DEWI",
+    "Class_2A": "Ms. NIRWANA",
+    "Class_2B": "Ms. LILIS SULISTIYOWATI",
+    "Class_3A": "Ms. DIAN INDRIYANI",
+    "Class_3B": "Ms. DWI NOVITA",
+    "Class_4A": "Ms. AYU FITRIYANI",
+    "Class_4B": "Ms. RIZKIYANA",
+    "Class_5A": "Mr. ABDUL RAHIM",
+    "Class_5B": "Ms. RINAWATI",
+    "Class_6A": "Ms. LUSI YUNITA",
+    "Class_6B": "Ms. HENDRY",
+  };
+
+  const teacherName = teacherMap[className] || "Unknown";
+  const today = new Date().toLocaleDateString('id-ID');
+
+  const headerCSV = `School Name:,${schoolName}\nClass:,${className.replace("_", " ")}\nTeacher:,${teacherName}\nReport Date:,${today}\n\n`;
+  const fullCSV = headerCSV + currentCSV;
+
+  const blob = new Blob([fullCSV], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'attendance.csv';
+  a.click();
+}
+
 
 function downloadPDF() {
   const schoolName = "SDN Bandungrejosari 3 Malang";
