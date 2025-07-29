@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -16,26 +17,18 @@
       color: #0f172a;
     }
     .container {
-      max-width: 90vw;
+      max-width: 600px;
       margin: auto;
       background: white;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    label {
-      margin-bottom: 5px;
-      display: block;
-      font-weight: bold;
-    }
-    select, input, button {
+    label, select, input, button {
       display: block;
       width: 100%;
       margin-bottom: 10px;
       padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      box-sizing: border-box;
     }
     button {
       background: #4338ca;
@@ -71,29 +64,20 @@
       color: white;
     }
     #reportSection {
-      overflow-x: auto;
-      margin-top: 20px;
-    }
-    .block {
-      margin-bottom: 40px;
-    }
-    hr {
-      margin: 40px 0;
-      border: 1px dashed #ccc;
-    }
-    .row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .row > * {
-      flex: 1;
-      min-width: 48%;
-    }
+  overflow-x: auto;
+  margin-top: 20px;
+}
+#reportSection table {
+  min-width: 600px;
+}
+.container {
+  max-width: 90vw;
+}
+
   </style>
 </head>
 <body>
-  <div class="container block">
+  <div class="container">
     <h2>Attendance Report</h2>
 
     <div class="report-options">
@@ -101,24 +85,26 @@
       <button id="monthlyBtn">Monthly Report</button>
     </div>
 
-    <div class="row">
-      <div>
-        <label for="classSelect">Select Class</label>
-        <select id="classSelect"><option>Loading...</option></select>
-      </div>
-      <div>
-        <label for="reportDate">Select Date/Month</label>
-        <input type="date" id="date" />
-        <input type="month" id="month" class="hidden" />
-      </div>
+    <label for="classSelect">Select Class</label>
+    <select id="classSelect"><option>Loading...</option></select>
+
+    <div id="dailyFields">
+      <label for="date">Select Date</label>
+      <input type="date" id="date">
+    </div>
+
+    <div id="monthlyFields" class="hidden">
+      <label for="month">Select Month</label>
+      <input type="month" id="month" />
     </div>
 
     <button id="btnFetch">Get Report</button>
 
+    <!-- Student filter -->
     <input type="text" id="nameFilter" placeholder="Filter by student name..." style="display:none;">
-    <input type="text" id="studentTracker" placeholder="Track specific student..." style="display:none;">
 
-    <div id="exportButtons" style="margin-top:10px; display:none; gap:10px; display:flex;">
+    <!-- Export buttons -->
+    <div id="exportButtons" style="margin-top:10px; display:none; gap:10px;">
       <button id="btnPDF">📄 Download PDF</button>
       <button id="btnCSV">📁 Download CSV</button>
     </div>
@@ -126,112 +112,224 @@
     <div id="reportSection"></div>
   </div>
 
-  <hr />
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec';
+    let reportType = 'daily';
+    let currentTableHTML = '';
+    let currentCSV = '';
 
-  <div class="container block">
-    <h2>Student Wise Report</h2>
+    // Toggle buttons behavior
+    document.getElementById('dailyBtn').addEventListener('click', () => toggleType('daily'));
+    document.getElementById('monthlyBtn').addEventListener('click', () => toggleType('monthly'));
+    function toggleType(type) {
+      reportType = type;
+      document.getElementById('dailyBtn').classList.toggle('active', type==='daily');
+      document.getElementById('monthlyBtn').classList.toggle('active', type!=='daily');
+      document.getElementById('dailyFields').classList.toggle('hidden', type!=='daily');
+      document.getElementById('monthlyFields').classList.toggle('hidden', type==='daily');
+      document.getElementById('nameFilter').style.display = 'none';
+      document.getElementById('exportButtons').style.display = 'none';
+      reportSection.innerHTML = '';
+    }
 
-    <div class="row">
-      <div>
-        <label for="studentClassSelect">Select Class</label>
-        <select id="studentClassSelect"><option>Loading...</option></select>
-      </div>
-      <div>
-        <label for="studentNameSelect">Select Student</label>
-        <select id="studentNameSelect"><option>Select student</option></select>
-      </div>
-    </div>
-
-    <div class="report-options">
-      <button id="studentWeeklyBtn" class="active">Weekly</button>
-      <button id="studentMonthlyBtn">Monthly</button>
-    </div>
-
-    <label for="studentDate">Start Date</label>
-    <input type="date" id="studentDate">
-
-    <button id="btnStudentReport">Get Student Report</button>
-
-    <div id="studentReportSection"></div>
-  </div>
-
-<script>
-  // Define Web App URL here
-const scriptURL = "https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec";
-
-
-// Example fetch usage:
-fetch(scriptURL, {
-  method: 'POST',
-  body: JSON.stringify({
-    action: 'getClassList'
-  }),
-})
-.then(res => res.json())
-.then(data => {
-  console.log(data); // class list
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Toggle for general report (daily/monthly)
-  const dailyBtn = document.getElementById('dailyBtn');
-  const monthlyBtn = document.getElementById('monthlyBtn');
-  const dateInput = document.getElementById('date');
-  const monthInput = document.getElementById('month');
-
-  [dailyBtn, monthlyBtn].forEach(btn => {
-    btn.addEventListener('click', () => {
-      dailyBtn.classList.remove('active');
-      monthlyBtn.classList.remove('active');
-      btn.classList.add('active');
-
-      if (btn.id === 'dailyBtn') {
-        dateInput.classList.remove('hidden');
-        monthInput.classList.add('hidden');
-      } else {
-        dateInput.classList.add('hidden');
-        monthInput.classList.remove('hidden');
+    // Load classes
+    async function loadClasses(){
+      try {
+        const res = await fetch(scriptURL + '?action=getClassList');
+        const list = await res.json();
+        const sel = document.getElementById('classSelect');
+        sel.innerHTML = '<option value="">-- Select Class --</option>';
+        list.forEach(c => sel.add(new Option(c, c)));
+      } catch(e) {
+        console.error(e);
+        alert('Failed to load classes');
       }
+    }
+    loadClasses();
+
+    document.getElementById('btnFetch').addEventListener('click', fetchReport);
+    document.getElementById('nameFilter').addEventListener('input', filterNames);
+
+    document.getElementById('btnCSV').addEventListener('click', downloadCSV);
+    document.getElementById('btnPDF').addEventListener('click', downloadPDF);
+
+async function fetchReport() {
+  const cls = document.getElementById('classSelect').value;
+  if (!cls) return alert('Please select a class.');
+  
+  const dateInput = reportType === 'daily' ? document.getElementById('date').value :
+                   document.getElementById('month').value;
+  if (!dateInput) return alert('Please select date/month.');
+
+  document.getElementById('reportSection').innerText = 'Loading...';
+
+  let url = scriptURL + `?action=getAttendanceReport&className=${encodeURIComponent(cls)}`;
+  
+  if (reportType === 'daily') {
+    const dObj = new Date(dateInput);
+    // Using the improved formatting with leading zeros
+    const day = String(dObj.getDate()).padStart(2, '0');
+    const month = String(dObj.getMonth() + 1).padStart(2, '0');
+    const d = `${day}/${month}/${dObj.getFullYear()}`;
+    
+    url += `&date=${encodeURIComponent(d)}`;
+  } else {
+    const [y, m] = dateInput.split('-');
+    url += `&month=${m}&year=${y}`;
+  }
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data || data.length === 0) {
+      document.getElementById('reportSection').innerHTML = '<p>No data found.</p>';
+      document.getElementById('exportButtons').style.display = 'none';
+      return;
+    }
+
+    buildTable(data);
+  } catch (error) {
+    console.error('Error fetching report:', error);
+    document.getElementById('reportSection').innerHTML = '<p>Attendance for this day hasnt been marked yet. </p>';
+  }
+}
+
+    function buildTable(data) {
+  if (reportType === 'monthly') {
+    const days = Object.keys(data[0].attendance || {});
+     if (days.length === 0) {
+      document.getElementById('reportSection').innerHTML = '<p>No attendance has been marked yet for this month.</p>';
+      document.getElementById('exportButtons').style.display = 'none';
+      return; // Exit the function if no attendance data
+    }
+
+
+
+    days.sort((a,b) => {
+      const [da, ma, ya] = a.split('/');
+      const [db, mb, yb] = b.split('/');
+      return new Date(`${ya}-${ma}-${da}`) - new Date(`${yb}-${mb}-${db}`);
     });
-  });
 
-  // Toggle for student report (weekly/monthly)
-  const studentWeeklyBtn = document.getElementById('studentWeeklyBtn');
-  const studentMonthlyBtn = document.getElementById('studentMonthlyBtn');
+    let html = '<table><tr><th>Roll</th><th>Name</th>';
+    days.forEach(d => html += `<th>${d}</th>`);
+    html += '</tr>';
 
-  [studentWeeklyBtn, studentMonthlyBtn].forEach(btn => {
-    btn.addEventListener('click', () => {
-      studentWeeklyBtn.classList.remove('active');
-      studentMonthlyBtn.classList.remove('active');
-      btn.classList.add('active');
+    let csv = 'Roll,Name,' + days.join(',') + '\n';
+
+    data.forEach(r => {
+      html += `<tr><td>${r.roll}</td><td>${r.name}</td>`;
+      csv += `${r.roll},${r.name}`;
+      days.forEach(day => {
+        const val = r.attendance?.[day] || '';
+        html += `<td>${val}</td>`;
+        csv += `,${val}`;
+      });
+      html += '</tr>';
+      csv += '\n';
     });
-  });
 
-  // Track student name in main report
-  const trackerInput = document.getElementById('studentTracker');
-  trackerInput.addEventListener('input', function() {
-    const inputName = this.value.trim().toLowerCase();
-    const rows = document.querySelectorAll('#reportSection table tr');
-    rows.forEach((tr, i) => {
-      if (i === 0) return; // skip header
-      const name = tr.children[1]?.textContent.toLowerCase();
-      if (!inputName || name.includes(inputName)) {
-        tr.style.backgroundColor = '';
-      } else {
-        tr.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
-      }
+    html += '</table>';
+    currentTableHTML = html;
+    currentCSV = csv;
+
+  } else {
+    // daily report fallback (same as before)
+    let html = '<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>';
+    let csv = 'Roll,Name,Status\n';
+    data.forEach(r => {
+      html += `<tr><td>${r.roll}</td><td>${r.name}</td><td>${r.status}</td></tr>`;
+      csv += `${r.roll},${r.name},${r.status}\n`;
     });
-  });
+    html += '</table>';
+    currentTableHTML = html;
+    currentCSV = csv;
+  }
 
-  // TODO: Populate class dropdowns from backend
-  const classSelect = document.getElementById('classSelect');
-  const studentClassSelect = document.getElementById('studentClassSelect');
-  const classes = ['Class1A', 'Class1B', 'Class2A']; // Example values
+  const rs = document.getElementById('reportSection');
+  rs.innerHTML = currentTableHTML;
+  document.getElementById('nameFilter').style.display = '';
+  document.getElementById('exportButtons').style.display = 'flex';
+}
 
-  [classSelect, studentClassSelect].forEach(select => {
-    select.innerHTML = classes.map(cls => `<option>${cls}</option>`).join('');
-  });
-});
+
+    function filterNames(){
+      const term = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#reportSection table tr');
+      rows.forEach((tr,i)=> {
+        if (i===0) return;
+        tr.style.display = tr.children[1].textContent.toLowerCase().includes(term) ? '' : 'none';
+      });
+    }
+function downloadCSV() {
+  const schoolName = "SDN Bandungrejosari 3 Malang";
+  const className = document.getElementById("classSelect")?.value || "Unknown";
+
+  const teacherMap = {
+    "Class_1A": "Ms. FARIDA HARIANI",
+    "Class_1B": "Ms. INE AYU KUSUMAH DEWI",
+    "Class_2A": "Ms. NADIA ROFIKA",
+    "Class_2B": "Mr. WIMBI DAMARA PUTRA",
+    "Class_3A": "Ms. WATINI",
+    "Class_3B": "Ms. KRISTIN KARTIKAWATI",
+    "Class_4A": "Ms. HARTATI PUSPITA DININGRUM",
+    "Class_4B": "Ms. Agustina Putri Setia Mardika",
+    "Class_5A": "Ms. PRIMA EKA SARI",
+    "Class_5B": "Ms. MU'AWANAH",
+    "Class_6A": "Ms. AULINA MAGHFIROH",
+    "Class_6B": "Mr. HERMIN SUSWAT",
+  };
+
+  const teacherName = teacherMap[className] || "Unknown";
+  const today = new Date().toLocaleDateString('id-ID');
+
+  const headerCSV = `School Name:,${schoolName}\nClass:,${className.replace("_", " ")}\nTeacher:,${teacherName}\nReport Date:,${today}\n\n`;
+  const fullCSV = headerCSV + currentCSV;
+
+  const blob = new Blob([fullCSV], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'attendance.csv';
+  a.click();
+}
+
+
+function downloadPDF() {
+  const schoolName = "SDN Bandungrejosari 3 Malang";
+  const className = document.getElementById("classSelect")?.value || "Unknown";
+
+  // Map class to teacher name
+  const teacherMap = {
+    "Class_1A": "Ms. FARIDA HARIANI",
+    "Class_1B": "Ms. INE AYU KUSUMAH DEWI",
+    "Class_2A": "Ms. NADIA ROFIKA",
+    "Class_2B": "Mr. WIMBI DAMARA PUTRA",
+    "Class_3A": "Ms. WATINI",
+    "Class_3B": "Ms. KRISTIN KARTIKAWATI",
+    "Class_4A": "Ms. HARTATI PUSPITA DININGRUM",
+    "Class_4B": "Ms. Agustina Putri Setia Mardika",
+    "Class_5A": "Ms. PRIMA EKA SARI",
+    "Class_5B": "Ms. MU'AWANAH",
+    "Class_6A": "Ms. AULINA MAGHFIROH",
+    "Class_6B": "Mr. HERMIN SUSWAT",
+  };
+
+  const teacherName = teacherMap[className] || "Unknown";
+
+  const headerHTML = `
+    <div style="text-align:center; margin-bottom:20px;">
+      <h2 style="margin:0; color:#d62828;">${schoolName}</h2>
+      <p style="margin:0; font-size:16px;">Class: ${className.replace("_", " ")}</p>
+      <p style="margin:0; font-size:16px;">Teacher: ${teacherName}</p>
+      <hr style="margin-top:10px;">
+    </div>
+  `;
+
+  const w = window.open();
+  w.document.write(`<html><head><title>Attendance Report</title></head><body>${headerHTML}${currentTableHTML}</body></html>`);
+  w.print();
+}
 </script>
 </body>
 </html>
