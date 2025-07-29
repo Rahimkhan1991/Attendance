@@ -109,6 +109,7 @@
           username: username,
           role: users[username].role,
           className: users[username].className || null
+          teacherName: users[username].teacherName || ""
         };
         localStorage.setItem("attendanceUser", JSON.stringify(userData));
         window.location.href = "index.html";
