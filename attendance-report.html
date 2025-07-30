@@ -554,6 +554,10 @@
       };
 
       const teacherName = teacherMap[className] || "Unknown";
+      ////////const today = new Date().toLocaleDateString('id-ID');
+      const selectedDate = document.getElementById("dateInput").value;
+      const formattedDate = new Date(selectedDate).toLocaleDateString('id-ID');
+
 
       const headerHTML = `
         <div style="text-align:center; margin-bottom:20px;">
