@@ -102,7 +102,6 @@
     <div class="report-options">
       <button id="dailyBtn" class="active">Daily Report</button>
       <button id="monthlyBtn">Monthly Report</button>
-      <button id="studentBtn">Student Report</button>
     </div>
 
     <label for="classSelect">Select Class</label>
@@ -118,21 +117,7 @@
       <input type="month" id="month" />
     </div>
 
-    <div id="studentFields" class="hidden">
-      <label for="studentSelect">Select Student</label>
-      <select id="studentSelect" disabled><option>Select class first</option></select>
-      
-      <div class="student-report-options">
-        <button id="weeklyViewBtn" class="active">Weekly View</button>
-        <button id="monthlyViewBtn">Monthly View</button>
-      </div>
-      
-      <label for="studentWeek">Select Week</label>
-      <input type="week" id="studentWeek" class="student-date-input">
-      
-      <label for="studentMonth" class="hidden">Select Month</label>
-      <input type="month" id="studentMonth" class="student-date-input hidden">
-    </div>
+    
 
     <button id="btnFetch">Get Report</button>
 
@@ -151,17 +136,15 @@
   <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyNWTluHoK_rZD0bJXll7g0vZ3f6yr4bQbrRw5FmIeMDJSQyvO6cTcR6oVZK8e-yj1icA/exec';
     let reportType = 'daily';
-    let studentViewType = 'weekly';
     let currentTableHTML = '';
     let currentCSV = '';
 
     // Toggle buttons behavior
     document.getElementById('dailyBtn').addEventListener('click', () => toggleType('daily'));
     document.getElementById('monthlyBtn').addEventListener('click', () => toggleType('monthly'));
-    document.getElementById('studentBtn').addEventListener('click', () => toggleType('student'));
+
     
-    document.getElementById('weeklyViewBtn').addEventListener('click', () => toggleStudentView('weekly'));
-    document.getElementById('monthlyViewBtn').addEventListener('click', () => toggleStudentView('monthly'));
+   
     
     function toggleStudentView(type) {
       studentViewType = type;
@@ -177,11 +160,10 @@
       reportType = type;
       document.getElementById('dailyBtn').classList.toggle('active', type==='daily');
       document.getElementById('monthlyBtn').classList.toggle('active', type==='monthly');
-      document.getElementById('studentBtn').classList.toggle('active', type==='student');
       
       document.getElementById('dailyFields').classList.toggle('hidden', type!=='daily');
       document.getElementById('monthlyFields').classList.toggle('hidden', type!=='monthly');
-      document.getElementById('studentFields').classList.toggle('hidden', type!=='student');
+     
       
       document.getElementById('nameFilter').style.display = type === 'student' ? 'none' : 'none';
       document.getElementById('exportButtons').style.display = 'none';
@@ -209,40 +191,7 @@
     }
     loadClasses();
 
-    // Load students when class is selected
-    document.getElementById('classSelect').addEventListener('change', async function() {
-      if (reportType !== 'student') return;
-      
-      const cls = this.value;
-      if (!cls) {
-        document.getElementById('studentSelect').innerHTML = '<option>Select class first</option>';
-        document.getElementById('studentSelect').disabled = true;
-        return;
-      }
-      
-      try {
-        document.getElementById('studentSelect').innerHTML = '<option>Loading students...</option>';
-        const res = await fetch(scriptURL + `?action=getStudentList&className=${encodeURIComponent(cls)}`);
-        const students = await res.json();
-        
-        // Check if the response is an array
-        if (!Array.isArray(students)) {
-          throw new Error('Invalid student list format');
-        }
-        
-        const sel = document.getElementById('studentSelect');
-        sel.innerHTML = '<option value="">-- Select Student --</option>';
-        students.forEach(s => {
-          if (s.roll && s.name) {
-            sel.add(new Option(`${s.roll} - ${s.name}`, s.roll));
-          }
-        });
-        sel.disabled = false;
-      } catch(e) {
-        console.error('Error loading students:', e);
-        document.getElementById('studentSelect').innerHTML = '<option>Error loading students</option>';
-      }
-    });
+   
 
     document.getElementById('btnFetch').addEventListener('click', fetchReport);
     document.getElementById('nameFilter').addEventListener('input', filterNames);
