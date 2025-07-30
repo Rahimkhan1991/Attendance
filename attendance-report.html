@@ -414,8 +414,8 @@
       
       dates.forEach(date => {
         const status = studentData.attendance[date] || 'N/A';
-        html += `<tr><td>${date}</td><td>${dates}</td></tr>`;
-        csv += `${date},${dateInput}\n`;
+        html += `<tr><td>${date}</td><td>${status}</td></tr>`;
+        csv += `${date},${status}\n`;
       });
       
       html += '</table>';
@@ -473,7 +473,7 @@
 
       } else {
         // daily report
-        let html = `<tr><th>Roll</th><th>Name</th><th>${selectedDate}</th></tr>`;
+        let html = `<tr><th>Roll</th><th>Name</th><th>status</th></tr>`;
         let csv = 'Roll,Name,Status\n';
         data.forEach(r => {
           html += `<tr><td>${r.roll || ''}</td><td>${r.name || ''}</td><td>${r.status || ''}</td></tr>`;
