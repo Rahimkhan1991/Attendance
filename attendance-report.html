@@ -473,7 +473,7 @@
 
       } else {
         // daily report
-        let html = `<tr><th>Roll</th><th>Name</th><th>status</th></tr>`;
+        let html = '<table><tr><th>Roll</th><th>Name</th><th>Status</th></tr>';
         let csv = 'Roll,Name,Status\n';
         data.forEach(r => {
           html += `<tr><td>${r.roll || ''}</td><td>${r.name || ''}</td><td>${r.status || ''}</td></tr>`;
@@ -554,10 +554,6 @@
       };
 
       const teacherName = teacherMap[className] || "Unknown";
-      ////////const today = new Date().toLocaleDateString('id-ID');
-      const selectedDate = document.getElementById("dateInput").value;
-      const formattedDate = new Date(selectedDate).toLocaleDateString('id-ID');
-
 
       const headerHTML = `
         <div style="text-align:center; margin-bottom:20px;">
