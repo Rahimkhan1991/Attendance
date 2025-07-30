@@ -399,8 +399,17 @@
         });
 
         let html = '<table><tr><th>Roll</th><th>Name</th>';
-        days.forEach(d => html += `<th>${d}</th>`);
-        html += '</tr>';
+days.forEach(d => {
+  const parts = d.split(/[\/\-]/); // handles both "21/07/2025" or "2025-07-21"
+  let formatted = d;
+  if (parts.length === 3) {
+    const [day, month, year] = parts[0].length === 4 ? [parts[2], parts[1], parts[0]] : parts;
+    formatted = `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+  }
+  html += `<th>${formatted}</th>`;
+});
+html += '</tr>';
+
 
         let csv = 'Roll,Name,' + days.join(',') + '\n';
 
