@@ -414,8 +414,8 @@
       
       dates.forEach(date => {
         const status = studentData.attendance[date] || 'N/A';
-        html += `<tr><td>${date}</td><td>${status}</td></tr>`;
-        csv += `${date},${status}\n`;
+        html += `<tr><td>${date}</td><td>${dates}</td></tr>`;
+        csv += `${date},${dateInput}\n`;
       });
       
       html += '</table>';
