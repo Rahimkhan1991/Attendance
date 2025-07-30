@@ -210,43 +210,40 @@
     loadClasses();
 
     // Load students when class is selected
-   document.getElementById('classSelect').addEventListener('change', async function() {
-  if (reportType !== 'student') return;
-  
-  const cls = this.value;
-  if (!cls) {
-    document.getElementById('studentSelect').innerHTML = '<option>Select class first</option>';
-    document.getElementById('studentSelect').disabled = true;
-    return;
-  }
-  
-  try {
-    document.getElementById('studentSelect').innerHTML = '<option>Loading students...</option>';
-    const res = await fetch(scriptURL + `?action=getStudents&className=${encodeURIComponent(cls)}`);
-    const response = await res.json();
-    
-    // Check if the response is valid
-    if (!response || !response.success || !Array.isArray(response.data)) {
-      throw new Error(response.message || 'Invalid student list format');
-    }
-    
-    const students = response.data;
-    const sel = document.getElementById('studentSelect');
-    sel.innerHTML = '<option value="">-- Select Student --</option>';
-    
-    if (students.length === 0) {
-      sel.add(new Option('No students found in this class', ''));
-    } else {
-      students.forEach(s => {
-        sel.add(new Option(`${s.roll} - ${s.name}`, s.roll));
-      });
-    }
-    sel.disabled = false;
-  } catch(e) {
-    console.error('Error loading students:', e);
-    document.getElementById('studentSelect').innerHTML = `<option>Error: ${e.message || 'Unknown error'}</option>`;
-  }
-});
+    document.getElementById('classSelect').addEventListener('change', async function() {
+      if (reportType !== 'student') return;
+      
+      const cls = this.value;
+      if (!cls) {
+        document.getElementById('studentSelect').innerHTML = '<option>Select class first</option>';
+        document.getElementById('studentSelect').disabled = true;
+        return;
+      }
+      
+      try {
+        document.getElementById('studentSelect').innerHTML = '<option>Loading students...</option>';
+        const res = await fetch(scriptURL + `?action=getStudentList&className=${encodeURIComponent(cls)}`);
+        const students = await res.json();
+        
+        // Check if the response is an array
+        if (!Array.isArray(students)) {
+          throw new Error('Invalid student list format');
+        }
+        
+        const sel = document.getElementById('studentSelect');
+        sel.innerHTML = '<option value="">-- Select Student --</option>';
+        students.forEach(s => {
+          if (s.roll && s.name) {
+            sel.add(new Option(`${s.roll} - ${s.name}`, s.roll));
+          }
+        });
+        sel.disabled = false;
+      } catch(e) {
+        console.error('Error loading students:', e);
+        document.getElementById('studentSelect').innerHTML = '<option>Error loading students</option>';
+      }
+    });
+
     document.getElementById('btnFetch').addEventListener('click', fetchReport);
     document.getElementById('nameFilter').addEventListener('input', filterNames);
 
